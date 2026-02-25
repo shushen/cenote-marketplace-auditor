@@ -10,6 +10,7 @@ services:
       - DB_USERNAME=${DB_USERNAME:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_DATABASE=${DB_DATABASE:-marketplace_auditor}
+      - IS_ROA=${IS_ROA:-false} # Set to true for ROA apps
       - SESSION_SECURE_COOKIE=${SESSION_SECURE_COOKIE:-false} # Set to true if using HTTPS
       - TRUST_PROXY=${TRUST_PROXY:-false} # Set to true if behind a reverse proxy
     depends_on:

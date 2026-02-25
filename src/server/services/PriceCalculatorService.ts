@@ -9,6 +9,9 @@ import {
     ACADEMIC_DC_PRICE_RATIO_LEGACY,
     CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE,
     CLOUD_DISCOUNT_RATIO_LEGACY,
+    CLOUD_DISCOUNT_RATIO_LESS_THAN_1M,
+    CLOUD_DISCOUNT_RATIO_LESS_THAN_1M_NON_ROA_START_DATE,
+    CLOUD_DISCOUNT_RATIO_LESS_THAN_1M_ROA_START_DATE,
     COMMUNITY_CLOUD_PRICE_RATIO,
     DC_DISCOUNT_RATIO,
     FORGE_RATE_2026_04,
@@ -48,13 +51,24 @@ export class PriceCalculatorService {
         deploymentType: DeploymentType;
         forgeMigrationDate?: string | null;
         alwaysForge?: boolean;
+        accRevenue: number;
+        isRoA: boolean;
     }): number {
-        const { saleDate, deploymentType, forgeMigrationDate, alwaysForge } = opts;
+        const { saleDate, deploymentType, forgeMigrationDate, alwaysForge , accRevenue, isRoA } = opts;
 
         // DC always has the same rate
 
         if (deploymentType !== 'cloud') {
             return DC_DISCOUNT_RATIO;
+        }
+
+        // Sellers with less than $1M in accumulated revenue keep the full amount
+
+        if (accRevenue < 1_000_000) {
+            const startDate = isRoA ? CLOUD_DISCOUNT_RATIO_LESS_THAN_1M_ROA_START_DATE : CLOUD_DISCOUNT_RATIO_LESS_THAN_1M_NON_ROA_START_DATE;
+            if (saleDate >= startDate) {
+                return CLOUD_DISCOUNT_RATIO_LESS_THAN_1M;
+            }
         }
 
         // Sales prior to 2026-04-01 always have the 85% rate, regardless of deployment type
@@ -443,6 +457,8 @@ export class PriceCalculatorService {
                     descriptors.push({ subtotal: basePrice, description: `Annual discount: 12 months for the price of ${ANNUAL_DISCOUNT_MULTIPLIER}` });
                 }
             } else {
+                // Short month proration no longer seems to apply as of Feb 2026
+                /*
                 if (licenseDurationDays < 29) {
                     if (licenseDurationDays === 0) {
                         basePrice = 0;
@@ -451,6 +467,7 @@ export class PriceCalculatorService {
                         descriptors.push({ subtotal: basePrice, description: `Short month: prorate by (${licenseDurationDays}+2)/31 days` });
                     }
                 }
+                */
             }
         }
 
@@ -612,7 +629,8 @@ export class PriceCalculatorService {
         const { saleDate, discountReferenceSaleDate, forgeMigrationDate, alwaysForge } = opts;
         const discountDate = discountReferenceSaleDate || saleDate;
         const deploymentType = deploymentTypeFromHosting(opts.hosting);
-        const discountAmount = this.getDiscountAmount({ saleDate: discountDate, deploymentType, forgeMigrationDate, alwaysForge });
+        const isRoA = process.env.IS_ROA === 'true';
+        const discountAmount = this.getDiscountAmount({ saleDate: discountDate, deploymentType, forgeMigrationDate, alwaysForge, accRevenue: 0, isRoA });
         const vendorPrice = basePriceAfterDiscounts * discountAmount;
 
         descriptors = [
