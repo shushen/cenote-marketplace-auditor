@@ -3,6 +3,7 @@
 if [ "$1" == "we" ]; then
     echo "Launching with default configuration..."
     export PROJECT_NAME="auditor-we"
+    export HOST_APP_PORT=3200
 elif [ "$1" == "og" ]; then
     echo "Launching with OG configuration..."
     export HOST_APP_PORT=3100
