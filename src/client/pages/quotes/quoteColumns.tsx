@@ -33,6 +33,17 @@ function formatListPrice(listPrice?: number): string {
     return `$${listPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function toTitleCase(value?: string): string {
+    if (!value) {
+        return '';
+    }
+    return value
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
 export const defaultQuoteColumns: ColumnConfig<Quote, QuoteCellContext, QuoteQuerySortType>[] = [
     {
         id: 'quoteCreatedDate',
@@ -89,6 +100,12 @@ export const defaultQuoteColumns: ColumnConfig<Quote, QuoteCellContext, QuoteQue
         label: 'Product Name',
         visible: true,
         renderSimpleCell: (quote) => quote.productName ?? '',
+    },
+    {
+        id: 'productPlatform',
+        label: 'Product Platform',
+        visible: true,
+        renderSimpleCell: (quote) => toTitleCase(quote.productPlatform),
     },
     {
         id: 'startDate',
