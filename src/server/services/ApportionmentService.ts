@@ -14,6 +14,7 @@ import {
 import { parsePurchaseMonth } from '#common/util/purchaseMonthUtils.js';
 import { buildYearlyApportionmentFromMonths } from '#common/util/apportionmentAggregation.js';
 import { rebindApportionmentBeforeSaleMonth } from '#common/util/apportionmentSaleMonthRebinding.js';
+import { formatMarketplaceTransactionIdForDisplay } from '#common/util/marketplaceTransactionId.js';
 
 @injectable()
 export class ApportionmentService {
@@ -85,7 +86,9 @@ export class ApportionmentService {
                 aggregate.actualValue += entry.actualValue;
                 aggregate.transactions.push({
                     transactionId: transaction.id,
-                    marketplaceTransactionId: transaction.marketplaceTransactionId,
+                    marketplaceTransactionId: formatMarketplaceTransactionIdForDisplay(
+                        transaction.marketplaceTransactionId
+                    ),
                     transactionVersion: transaction.currentVersion,
                     purchaseDate,
                     actualAmount: entry.actualValue,

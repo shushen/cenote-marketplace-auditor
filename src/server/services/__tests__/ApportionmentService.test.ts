@@ -9,7 +9,7 @@ describe('ApportionmentService', () => {
         opts: { addonKey: string; hosting: 'Cloud' | 'Data Center'; marketplaceTransactionId?: string; purchaseDate?: string }
     ): Transaction => ({
         id,
-        marketplaceTransactionId: opts.marketplaceTransactionId ?? `mp-${id}`,
+        marketplaceTransactionId: opts.marketplaceTransactionId ?? `li-${id}:mp-${id}`,
         currentVersion: version,
         data: {
             addonKey: opts.addonKey,
@@ -76,7 +76,7 @@ describe('ApportionmentService', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-1',
-                                marketplaceTransactionId: 'mp-tx-1',
+                                marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                                 transactionVersion: 2,
                                 purchaseDate: '2026-06-15',
                                 actualAmount: 100,
@@ -98,7 +98,7 @@ describe('ApportionmentService', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-2',
-                                marketplaceTransactionId: 'mp-tx-2',
+                                marketplaceTransactionId: 'mp-tx-2:li-tx-2',
                                 transactionVersion: 6,
                                 purchaseDate: '2026-06-15',
                                 actualAmount: 100,
@@ -117,7 +117,7 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
-                        marketplaceTransactionId: 'mp-tx-1',
+                        marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
                         actualAmount: 55,
@@ -126,7 +126,7 @@ describe('ApportionmentService', () => {
                     },
                     {
                         transactionId: 'tx-2',
-                        marketplaceTransactionId: 'mp-tx-2',
+                        marketplaceTransactionId: 'mp-tx-2:li-tx-2',
                         transactionVersion: 6,
                         purchaseDate: '2026-06-15',
                         actualAmount: 100,
@@ -141,7 +141,7 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
-                        marketplaceTransactionId: 'mp-tx-1',
+                        marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
                         actualAmount: 45,
@@ -185,7 +185,7 @@ describe('ApportionmentService', () => {
                 actualValue: 10,
                 transactions: [{
                     transactionId: 'tx-1',
-                    marketplaceTransactionId: 'mp-tx-1',
+                    marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                     transactionVersion: 1,
                     purchaseDate: '2026-06-15',
                     actualAmount: 10,

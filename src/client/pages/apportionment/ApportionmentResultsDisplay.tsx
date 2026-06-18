@@ -1,14 +1,17 @@
-import React from 'react';
-import { Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Button, Typography } from '@mui/material';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import {
     MonthlyAggregateApportionmentResponse,
     YearlyApportionmentByAddon
 } from '#common/types/apportionment.js';
 import { formatCurrency } from '#common/util/formatCurrency.js';
+import { exportApportionmentExcel } from './exportApportionmentExcel';
 import {
     ApportionmentResultsTable,
     ApportionmentSection,
     ApportionmentSectionHeading,
+    ApportionmentSectionHeadingRow,
     ApportionmentAddonGroup,
     ApportionmentHostingGroup
 } from './styles';
@@ -61,16 +64,55 @@ const ApportionmentValueTable: React.FC<ApportionmentValueTableProps> = ({
     );
 };
 
-const YearlyByAddonSection: React.FC<{ byAddon: YearlyApportionmentByAddon[] }> = ({ byAddon }) => {
+const YearlyByAddonSection: React.FC<{
+    purchaseMonth: string;
+    byAddon: YearlyApportionmentByAddon[];
+}> = ({ purchaseMonth, byAddon }) => {
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
+
     if (byAddon.length === 0) {
         return null;
     }
 
+    const handleExport = async () => {
+        setIsExporting(true);
+        setExportError(null);
+
+        try {
+            await exportApportionmentExcel({ purchaseMonth, byAddon });
+        } catch (error) {
+            setExportError(error instanceof Error ? error.message : 'Failed to export Excel file');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <ApportionmentSection>
-            <ApportionmentSectionHeading variant="subtitle1" fontWeight="bold" color="text.secondary">
-                By product and hosting
-            </ApportionmentSectionHeading>
+            <ApportionmentSectionHeadingRow>
+                <ApportionmentSectionHeading
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    color="text.secondary"
+                >
+                    By product and hosting
+                </ApportionmentSectionHeading>
+                <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<FileDownloadOutlinedIcon />}
+                    onClick={handleExport}
+                    disabled={isExporting}
+                >
+                    {isExporting ? 'Exporting...' : 'Export Excel'}
+                </Button>
+            </ApportionmentSectionHeadingRow>
+            {exportError && (
+                <Typography variant="caption" color="error" display="block" mb={1}>
+                    {exportError}
+                </Typography>
+            )}
             {byAddon.map((addonGroup) => (
                 <ApportionmentAddonGroup key={addonGroup.addonKey}>
                     <Typography variant="body2" fontWeight="bold" color="text.secondary">
@@ -128,7 +170,7 @@ export const ApportionmentResultsDisplay: React.FC<ApportionmentResultsDisplayPr
                 />
             </ApportionmentSection>
 
-            <YearlyByAddonSection byAddon={result.byAddon} />
+            <YearlyByAddonSection purchaseMonth={result.purchaseMonth} byAddon={result.byAddon} />
 
             <ApportionmentSection>
                 <ApportionmentSectionHeading variant="subtitle1" fontWeight="bold" color="text.secondary">

@@ -57,6 +57,16 @@ export const ApportionmentSectionHeading = muiStyled(Typography)(({ theme }) => 
     marginBottom: theme.spacing(1.5)
 })) as typeof Typography;
 
+export const ApportionmentSectionHeadingRow = muiStyled(Box)(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1.5),
+    marginBottom: theme.spacing(1.5),
+    '& > :first-of-type': {
+        marginBottom: 0
+    }
+}));
+
 export const ApportionmentAddonGroup = muiStyled(Box)(({ theme }) => ({
     marginBottom: theme.spacing(3),
     paddingLeft: theme.spacing(1),
