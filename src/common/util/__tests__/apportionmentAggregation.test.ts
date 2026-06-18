@@ -9,6 +9,7 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-1',
+                    marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     actualAmount: 55,
                     addonKey: 'com.app.a',
@@ -16,6 +17,7 @@ describe('buildYearlyApportionmentFromMonths', () => {
                 },
                 {
                     transactionId: 'tx-2',
+                    marketplaceTransactionId: 'mp-tx-2',
                     transactionVersion: 6,
                     actualAmount: 100,
                     addonKey: 'com.app.b',
@@ -29,6 +31,7 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-1',
+                    marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     actualAmount: 45,
                     addonKey: 'com.app.a',
@@ -42,6 +45,7 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-3',
+                    marketplaceTransactionId: 'mp-tx-3',
                     transactionVersion: 1,
                     actualAmount: 20,
                     addonKey: 'com.app.a',
@@ -70,8 +74,30 @@ describe('buildYearlyApportionmentFromMonths', () => {
                     {
                         hosting: 'Cloud',
                         years: [
-                            { year: '2026', actualValue: 100 },
-                            { year: '2027', actualValue: 20 }
+                            {
+                                year: '2026',
+                                actualValue: 100,
+                                transactions: [{
+                                    transactionId: 'tx-1',
+                                    marketplaceTransactionId: 'mp-tx-1',
+                                    transactionVersion: 2,
+                                    actualAmount: 100,
+                                    addonKey: 'com.app.a',
+                                    hosting: 'Cloud'
+                                }]
+                            },
+                            {
+                                year: '2027',
+                                actualValue: 20,
+                                transactions: [{
+                                    transactionId: 'tx-3',
+                                    marketplaceTransactionId: 'mp-tx-3',
+                                    transactionVersion: 1,
+                                    actualAmount: 20,
+                                    addonKey: 'com.app.a',
+                                    hosting: 'Cloud'
+                                }]
+                            }
                         ]
                     }
                 ]
@@ -81,7 +107,18 @@ describe('buildYearlyApportionmentFromMonths', () => {
                 byHosting: [
                     {
                         hosting: 'Data Center',
-                        years: [{ year: '2026', actualValue: 100 }]
+                        years: [{
+                            year: '2026',
+                            actualValue: 100,
+                            transactions: [{
+                                transactionId: 'tx-2',
+                                marketplaceTransactionId: 'mp-tx-2',
+                                transactionVersion: 6,
+                                actualAmount: 100,
+                                addonKey: 'com.app.b',
+                                hosting: 'Data Center'
+                            }]
+                        }]
                     }
                 ]
             }

@@ -1,4 +1,5 @@
 import {
+    ApportionmentTransactionRef,
     MonthlyAggregateApportionmentEntry,
     YearlyApportionmentByAddon,
     YearlyApportionmentEntry
@@ -17,11 +18,28 @@ function sortYearlyEntries(entries: YearlyApportionmentEntry[]): YearlyApportion
     return [...entries].sort((a, b) => a.year.localeCompare(b.year));
 }
 
+function aggregateTransactionRefs(refs: ApportionmentTransactionRef[]): ApportionmentTransactionRef[] {
+    const byTransactionId = new Map<string, ApportionmentTransactionRef>();
+
+    for (const ref of refs) {
+        const existing = byTransactionId.get(ref.transactionId);
+        if (existing) {
+            existing.actualAmount += ref.actualAmount;
+        } else {
+            byTransactionId.set(ref.transactionId, { ...ref });
+        }
+    }
+
+    return [...byTransactionId.values()]
+        .map(ref => ({ ...ref, actualAmount: roundCurrency(ref.actualAmount) }))
+        .sort((a, b) => a.transactionId.localeCompare(b.transactionId));
+}
+
 export function buildYearlyApportionmentFromMonths(
     months: MonthlyAggregateApportionmentEntry[]
 ): { years: YearlyApportionmentEntry[]; byAddon: YearlyApportionmentByAddon[] } {
     const overallByYear = new Map<string, number>();
-    const byAddonMap = new Map<string, Map<HostingType, Map<string, number>>>();
+    const byAddonMap = new Map<string, Map<HostingType, Map<string, ApportionmentTransactionRef[]>>>();
 
     for (const monthEntry of months) {
         const year = yearFromMonth(monthEntry.month);
@@ -40,7 +58,9 @@ export function buildYearlyApportionmentFromMonths(
                 hostingMap.set(transaction.hosting, yearMap);
             }
 
-            yearMap.set(year, (yearMap.get(year) ?? 0) + transaction.actualAmount);
+            const refs = yearMap.get(year) ?? [];
+            refs.push(transaction);
+            yearMap.set(year, refs);
         }
     }
 
@@ -60,10 +80,16 @@ export function buildYearlyApportionmentFromMonths(
                 .map(([hosting, yearMap]) => ({
                     hosting,
                     years: sortYearlyEntries(
-                        [...yearMap.entries()].map(([year, actualValue]) => ({
-                            year,
-                            actualValue: roundCurrency(actualValue)
-                        }))
+                        [...yearMap.entries()].map(([year, refs]) => {
+                            const transactions = aggregateTransactionRefs(refs);
+                            return {
+                                year,
+                                actualValue: roundCurrency(
+                                    transactions.reduce((sum, ref) => sum + ref.actualAmount, 0)
+                                ),
+                                transactions
+                            };
+                        })
                     )
                 }))
         }));

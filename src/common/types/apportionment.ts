@@ -2,6 +2,7 @@ import { HostingType } from '#common/types/marketplace.js';
 
 export interface ApportionmentTransactionRef {
     transactionId: string;
+    marketplaceTransactionId: string;
     transactionVersion: number;
     actualAmount: number;
     addonKey: string;
@@ -17,6 +18,7 @@ export interface MonthlyAggregateApportionmentEntry {
 export interface YearlyApportionmentEntry {
     year: string;
     actualValue: number;
+    transactions?: ApportionmentTransactionRef[];
 }
 
 export interface YearlyApportionmentByHosting {

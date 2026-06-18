@@ -6,9 +6,10 @@ describe('ApportionmentService', () => {
     const createTransaction = (
         id: string,
         version: number,
-        opts: { addonKey: string; hosting: 'Cloud' | 'Data Center' }
+        opts: { addonKey: string; hosting: 'Cloud' | 'Data Center'; marketplaceTransactionId?: string }
     ): Transaction => ({
         id,
+        marketplaceTransactionId: opts.marketplaceTransactionId ?? `mp-${id}`,
         currentVersion: version,
         data: {
             addonKey: opts.addonKey,
@@ -67,7 +68,18 @@ describe('ApportionmentService', () => {
                 byHosting: [
                     {
                         hosting: 'Cloud',
-                        years: [{ year: '2026', actualValue: 100 }]
+                        years: [{
+                            year: '2026',
+                            actualValue: 100,
+                            transactions: [{
+                                transactionId: 'tx-1',
+                                marketplaceTransactionId: 'mp-tx-1',
+                                transactionVersion: 2,
+                                actualAmount: 100,
+                                addonKey: 'com.app.a',
+                                hosting: 'Cloud'
+                            }]
+                        }]
                     }
                 ]
             },
@@ -77,7 +89,18 @@ describe('ApportionmentService', () => {
                 byHosting: [
                     {
                         hosting: 'Data Center',
-                        years: [{ year: '2026', actualValue: 100 }]
+                        years: [{
+                            year: '2026',
+                            actualValue: 100,
+                            transactions: [{
+                                transactionId: 'tx-2',
+                                marketplaceTransactionId: 'mp-tx-2',
+                                transactionVersion: 6,
+                                actualAmount: 100,
+                                addonKey: 'com.app.b',
+                                hosting: 'Data Center'
+                            }]
+                        }]
                     }
                 ]
             }
@@ -89,6 +112,7 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
+                        marketplaceTransactionId: 'mp-tx-1',
                         transactionVersion: 2,
                         actualAmount: 55,
                         addonKey: 'com.app.a',
@@ -96,6 +120,7 @@ describe('ApportionmentService', () => {
                     },
                     {
                         transactionId: 'tx-2',
+                        marketplaceTransactionId: 'mp-tx-2',
                         transactionVersion: 6,
                         actualAmount: 100,
                         addonKey: 'com.app.b',
@@ -109,6 +134,7 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
+                        marketplaceTransactionId: 'mp-tx-1',
                         transactionVersion: 2,
                         actualAmount: 45,
                         addonKey: 'com.app.a',
@@ -151,6 +177,7 @@ describe('ApportionmentService', () => {
                 actualValue: 10,
                 transactions: [{
                     transactionId: 'tx-1',
+                    marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 1,
                     actualAmount: 10,
                     addonKey: 'com.app.a',

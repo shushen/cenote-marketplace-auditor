@@ -85,6 +85,7 @@ export class ApportionmentService {
                 aggregate.actualValue += entry.actualValue;
                 aggregate.transactions.push({
                     transactionId: transaction.id,
+                    marketplaceTransactionId: transaction.marketplaceTransactionId,
                     transactionVersion: transaction.currentVersion,
                     actualAmount: entry.actualValue,
                     addonKey,
