@@ -4,6 +4,7 @@ export interface ApportionmentTransactionRef {
     transactionId: string;
     marketplaceTransactionId: string;
     transactionVersion: number;
+    purchaseDate: string;
     actualAmount: number;
     addonKey: string;
     hosting: HostingType;

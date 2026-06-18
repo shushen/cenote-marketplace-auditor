@@ -69,7 +69,7 @@ export class ApportionmentService {
             }
 
             const { addonKey } = transaction.data;
-            const { hosting } = transaction.data.purchaseDetails;
+            const { hosting, saleDate: purchaseDate } = transaction.data.purchaseDetails;
 
             for (const entry of apportionment) {
                 if (entry.actualValue === 0) {
@@ -87,6 +87,7 @@ export class ApportionmentService {
                     transactionId: transaction.id,
                     marketplaceTransactionId: transaction.marketplaceTransactionId,
                     transactionVersion: transaction.currentVersion,
+                    purchaseDate,
                     actualAmount: entry.actualValue,
                     addonKey,
                     hosting
