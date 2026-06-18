@@ -83,11 +83,10 @@ export class TransactionValidator {
         }
 
         // Calculate the expected price for the previous transaction, if it exists. The previous transaction is
-        // relevant to pricing for upgrades/downgrades (overlap). For Refund we only need previousPricing when
-        // the refund is MQB (e.g. to resolve mqbLicenseUserCount from context); non-MQB Refunds should not
-        // get overlap pricing, so we leave previousPricing undefined for them.
+        // relevant to pricing for upgrades/downgrades/refunds (overlap). For Refunds, previousPurchaseFindResult
+        // is the license that was active when the refunded purchase was made (see TransactionValidationService).
 
-        const needsPreviousPricing = (saleType==='Upgrade' || saleType==='Downgrade' || (saleType==='Refund' && isMQBTransaction(transaction)));
+        const needsPreviousPricing = saleType==='Upgrade' || saleType==='Downgrade' || (saleType==='Refund' && !!previousPurchaseFindResult);
         const previousPurchasePricing =
                     needsPreviousPricing && previousPurchase && previousPurchasePricingTierResult && typeof expectedDiscountForPreviousPurchase !== 'undefined'
                         ? this.calculatePriceForTransaction({
