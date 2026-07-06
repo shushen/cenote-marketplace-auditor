@@ -3,9 +3,29 @@ import { normalizeObject } from '#common/util/objectUtils.js';
 
 type QuoteDetailsLine = NonNullable<QuoteDetailsData['quotesLines']>[number];
 
-function normalizeOptionalString(value?: string): string | undefined {
-    const trimmed = value?.trim();
+function normalizeOptionalString(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const trimmed = value.trim();
     return trimmed || undefined;
+}
+
+function normalizeCreatedBy(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+        return normalizeOptionalString(value);
+    }
+    if (value && typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+        return normalizeOptionalString(
+            typeof record.email === 'string' ? record.email
+                : typeof record.name === 'string' ? record.name
+                : typeof record.type === 'string' ? record.type
+                : typeof record.authorType === 'string' ? record.authorType
+                : undefined
+        );
+    }
+    return undefined;
 }
 
 function normalizeQuoteLineFields(
@@ -37,7 +57,6 @@ function normalizeQuoteLineFields(
 
 function normalizeQuoteLevelFields(
     data: Pick<QuoteAggregateData, 'quoteNumber' | 'quoteStatus' | 'quoteCreatedDate' | 'acceptedDate' | 'quoteExpiryDate'>
-        | Pick<QuoteDetailsData, 'quoteId' | 'quoteNumber' | 'quoteStatus' | 'quoteCreatedDate' | 'quoteExpiryDate' | 'createdBy' | 'vendorId'>
 ): Record<string, string> {
     const normalized: Record<string, string> = {};
 
@@ -45,6 +64,30 @@ function normalizeQuoteLevelFields(
         const normalizedValue = normalizeOptionalString(value);
         if (normalizedValue !== undefined) {
             normalized[key] = normalizedValue;
+        }
+    }
+
+    return normalized;
+}
+
+function normalizeQuoteDetailsLevelFields(
+    details: QuoteDetailsData
+): Record<string, string> {
+    const normalized: Record<string, string> = {};
+
+    const entries: Array<[keyof QuoteDetailsData, string | undefined]> = [
+        ['quoteId', normalizeOptionalString(details.quoteId)],
+        ['quoteNumber', normalizeOptionalString(details.quoteNumber)],
+        ['quoteStatus', normalizeOptionalString(details.quoteStatus)],
+        ['quoteCreatedDate', normalizeOptionalString(details.quoteCreatedDate)],
+        ['quoteExpiryDate', normalizeOptionalString(details.quoteExpiryDate)],
+        ['createdBy', normalizeCreatedBy(details.createdBy)],
+        ['vendorId', normalizeOptionalString(details.vendorId)],
+    ];
+
+    for (const [key, value] of entries) {
+        if (value !== undefined) {
+            normalized[key] = value;
         }
     }
 
@@ -103,7 +146,7 @@ export function normalizeQuoteAggregateData(data: QuoteAggregateData): QuoteAggr
 
 export function normalizeQuoteDetailsData(details: QuoteDetailsData): QuoteDetailsData {
     const normalized: QuoteDetailsData = {
-        ...normalizeQuoteLevelFields(details),
+        ...normalizeQuoteDetailsLevelFields(details),
     };
 
     if (details.quotesLines?.length) {

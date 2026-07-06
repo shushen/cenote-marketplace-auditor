@@ -100,5 +100,20 @@ describe('quoteAggregateUtils', () => {
             expect(deepEqual(withCreatedBy, withoutCreatedBy)).toBe(false);
             expect(deepEqual(withoutCreatedBy, withEmptyCreatedBy)).toBe(true);
         });
+
+        it('ignores quotesLines when normalizing top-level details fields', () => {
+            const normalized = normalizeQuoteDetailsData({
+                quoteNumber: 'QT-123',
+                createdBy: 'CUSTOMER_ADVOCATE',
+                quotesLines: [{
+                    productName: 'Test App',
+                    schedules: [{ startDate: '2025-01-01', endDate: '2026-01-01' }],
+                }],
+            });
+
+            expect(normalized.quoteNumber).toBe('QT-123');
+            expect(normalized.createdBy).toBe('CUSTOMER_ADVOCATE');
+            expect(normalized.quotesLines).toHaveLength(1);
+        });
     });
 });
