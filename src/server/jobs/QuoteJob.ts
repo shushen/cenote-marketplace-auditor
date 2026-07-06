@@ -9,6 +9,7 @@ import {
     buildQuoteAggregateData,
     getQuoteNumberFromRow,
     normalizeQuoteAggregateData,
+    normalizeQuoteDetailsData,
 } from '#common/util/quoteAggregateUtils.js';
 import { TYPES } from '../config/types.js';
 import { inject, injectable } from 'inversify';
@@ -49,13 +50,14 @@ export class QuoteJob {
         const existingQuote = await this.quoteDao.getQuoteForQuoteNumber(quoteNumber);
 
         const normalizedData = normalizeObject(normalizeQuoteAggregateData(quoteData));
-        const normalizedDetails = normalizeObject(detailsData);
+        const normalizedDetails = normalizeObject(normalizeQuoteDetailsData(detailsData));
         let currentVersion = 1;
 
         if (existingQuote) {
             const existingNormalizedData = normalizeObject(normalizeQuoteAggregateData(existingQuote.data));
+            const existingNormalizedDetails = normalizeObject(normalizeQuoteDetailsData(existingQuote.details));
             const quoteChanged = !deepEqual(existingNormalizedData, normalizedData);
-            const detailsChanged = !deepEqual(existingQuote.details, normalizedDetails);
+            const detailsChanged = !deepEqual(existingNormalizedDetails, normalizedDetails);
 
             if (!quoteChanged && !detailsChanged) {
                 return { processed: 1, new: 0, modified: 0, skipped: 0 };
@@ -65,7 +67,7 @@ export class QuoteJob {
                 ? computeJsonPaths(existingNormalizedData, normalizedData)
                 : [];
             const changedDetailsPaths = detailsChanged
-                ? computeJsonPaths(existingQuote.details, normalizedDetails)
+                ? computeJsonPaths(existingNormalizedDetails, normalizedDetails)
                 : [];
 
             console.log(`Quote changed: ${quoteNumber}`);
@@ -75,7 +77,7 @@ export class QuoteJob {
             }
             if (changedDetailsPaths.length > 0) {
                 console.log('Changed details paths:', changedDetailsPaths.join(' | '));
-                printJsonDiff(existingQuote.details, normalizedDetails);
+                printJsonDiff(existingNormalizedDetails, normalizedDetails);
             }
 
             const oldVersionNum = await this.quoteVersionDao.getQuoteHighestVersion(existingQuote);

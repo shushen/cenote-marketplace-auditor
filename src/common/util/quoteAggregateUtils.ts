@@ -1,5 +1,55 @@
-import { QuoteAggregateData, QuoteData, QuoteLineAggregate, QuoteScheduleData } from '#common/types/marketplace.js';
+import { QuoteAggregateData, QuoteData, QuoteDetailsData, QuoteLineAggregate, QuoteScheduleData } from '#common/types/marketplace.js';
 import { normalizeObject } from '#common/util/objectUtils.js';
+
+type QuoteDetailsLine = NonNullable<QuoteDetailsData['quotesLines']>[number];
+
+function normalizeOptionalString(value?: string): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed || undefined;
+}
+
+function normalizeQuoteLineFields(
+    line: QuoteLineAggregate | QuoteDetailsLine
+): Omit<QuoteLineAggregate, 'schedules'> {
+    const normalized: Omit<QuoteLineAggregate, 'schedules'> = {};
+
+    const entries: Array<[keyof Omit<QuoteLineAggregate, 'schedules'>, string | undefined]> = [
+        ['entitlementEid', normalizeOptionalString(line.entitlementEid)],
+        ['entitlementNumber', normalizeOptionalString(line.entitlementNumber)],
+        ['commerceProductId', normalizeOptionalString(line.commerceProductId)],
+        ['productId', normalizeOptionalString(line.productId)],
+        ['productName', normalizeOptionalString(line.productName)],
+        ['appEdition', normalizeOptionalString(line.appEdition)],
+        ['technicalContactCompany', normalizeOptionalString(line.technicalContactCompany)],
+        ['technicalEmail', normalizeOptionalString(line.technicalEmail)],
+        ['productPlatform', normalizeOptionalString(line.productPlatform)],
+        ['commerceSystem', normalizeOptionalString(line.commerceSystem)],
+    ];
+
+    for (const [key, value] of entries) {
+        if (value !== undefined) {
+            normalized[key] = value;
+        }
+    }
+
+    return normalized;
+}
+
+function normalizeQuoteLevelFields(
+    data: Pick<QuoteAggregateData, 'quoteNumber' | 'quoteStatus' | 'quoteCreatedDate' | 'acceptedDate' | 'quoteExpiryDate'>
+        | Pick<QuoteDetailsData, 'quoteId' | 'quoteNumber' | 'quoteStatus' | 'quoteCreatedDate' | 'quoteExpiryDate' | 'createdBy' | 'vendorId'>
+): Record<string, string> {
+    const normalized: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+        const normalizedValue = normalizeOptionalString(value);
+        if (normalizedValue !== undefined) {
+            normalized[key] = normalizedValue;
+        }
+    }
+
+    return normalized;
+}
 
 export function getQuoteNumberFromRow(row: QuoteData): string {
     if (row.quoteNumber?.trim()) {
@@ -37,12 +87,33 @@ export function normalizeQuoteScheduleData(schedule: QuoteScheduleData): QuoteSc
 
 export function normalizeQuoteAggregateData(data: QuoteAggregateData): QuoteAggregateData {
     return {
-        ...data,
+        ...normalizeQuoteLevelFields({
+            quoteNumber: data.quoteNumber,
+            quoteStatus: data.quoteStatus,
+            quoteCreatedDate: data.quoteCreatedDate,
+            acceptedDate: data.acceptedDate,
+            quoteExpiryDate: data.quoteExpiryDate,
+        }),
         lines: data.lines.map(line => ({
-            ...line,
+            ...normalizeQuoteLineFields(line),
             schedules: line.schedules.map(normalizeQuoteScheduleData),
         })),
     };
+}
+
+export function normalizeQuoteDetailsData(details: QuoteDetailsData): QuoteDetailsData {
+    const normalized: QuoteDetailsData = {
+        ...normalizeQuoteLevelFields(details),
+    };
+
+    if (details.quotesLines?.length) {
+        normalized.quotesLines = details.quotesLines.map(line => ({
+            ...normalizeQuoteLineFields(line),
+            schedules: sortSchedules((line.schedules ?? []).map(normalizeQuoteScheduleData)),
+        }));
+    }
+
+    return normalized;
 }
 
 export function extractScheduleFromRow(row: QuoteData): QuoteScheduleData {

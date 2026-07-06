@@ -26,6 +26,7 @@ import { CloseButton } from '../../components/CloseButton';
 import { collectIdsForDiffObject } from '#client/util/collectIds.js';
 import { isoStringWithDateAndTime } from '#common/util/dateUtils.js';
 import { formatQuoteDetailsData, formatQuoteVersionDiffLabel } from './quoteUtils';
+import { normalizeQuoteAggregateData, normalizeQuoteDetailsData } from '#common/util/quoteAggregateUtils.js';
 
 interface QuoteVersionDialogProps {
     version: QuoteVersion | null;
@@ -42,10 +43,13 @@ export const QuoteVersionDialog: React.FC<QuoteVersionDialogProps> = ({
 }) => {
     if (!version) return null;
 
-    const quoteDiffObject = getObjectDiff(priorVersion?.data, version.data);
+    const quoteDiffObject = getObjectDiff(
+        priorVersion ? normalizeQuoteAggregateData(priorVersion.data) : undefined,
+        normalizeQuoteAggregateData(version.data)
+    );
     const detailsDiffObject = getObjectDiff(
-        priorVersion ? formatQuoteDetailsData(priorVersion.details) : undefined,
-        formatQuoteDetailsData(version.details)
+        priorVersion ? formatQuoteDetailsData(normalizeQuoteDetailsData(priorVersion.details)) : undefined,
+        formatQuoteDetailsData(normalizeQuoteDetailsData(version.details))
     );
     const quoteDiffIds = collectIdsForDiffObject(quoteDiffObject);
     const detailsDiffIds = collectIdsForDiffObject(detailsDiffObject);

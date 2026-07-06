@@ -1,6 +1,7 @@
 import { Container } from 'inversify';
 import { DataSource } from 'typeorm';
 import { MarketplaceService } from '../services/MarketplaceService.js';
+import { MarketplaceHttpClient } from '../services/MarketplaceHttpClient.js';
 import { AddonJob } from '../jobs/AddonJob.js';
 import { TransactionJob } from '../jobs/TransactionJob.js';
 import { LicenseJob } from '../jobs/LicenseJob.js';
@@ -48,6 +49,7 @@ export function configureContainer(dataSource: DataSource): Container {
     container.bind<DataSource>(TYPES.DataSource).toConstantValue(dataSource);
 
     // Bind Services
+    container.bind<MarketplaceHttpClient>(TYPES.MarketplaceHttpClient).to(MarketplaceHttpClient).inSingletonScope();
     container.bind<MarketplaceService>(TYPES.MarketplaceService).to(MarketplaceService).inSingletonScope();
     container.bind<AddonJob>(TYPES.AddonJob).to(AddonJob).inSingletonScope();
     container.bind<AddonDao>(TYPES.AddonDao).to(AddonDao).inSingletonScope();

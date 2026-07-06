@@ -1,5 +1,4 @@
 import { inject, injectable } from 'inversify';
-import axios from 'axios';
 import { Readable } from 'stream';
 import {
     InitiateAsyncLicense,
@@ -13,7 +12,7 @@ import { TYPES } from '../config/types.js';
 import { ConfigDao } from '../database/dao/ConfigDao.js';
 import { ConfigKey } from '#common/types/configItem.js';
 import { CloudOrServer, LiveOrPending } from '#server/services/types.js';
-import { throwMarketplaceApiError } from './MarketplaceApiError.js';
+import { MarketplaceHttpClient } from './MarketplaceHttpClient.js';
 
 type ListingResponse = v3Paths["/rest/3/product-listing/developer-space/{developerId}"]["get"]["responses"]["200"]["content"]["application/json"];
 type GetLicensesResponse = v3Components['schemas']['Reports_GetLicenses'];
@@ -52,7 +51,8 @@ export class MarketplaceService {
     private developerId: string = '';
 
     constructor(
-        @inject(TYPES.ConfigDao) private readonly configDao: ConfigDao
+        @inject(TYPES.ConfigDao) private readonly configDao: ConfigDao,
+        @inject(TYPES.MarketplaceHttpClient) private readonly httpClient: MarketplaceHttpClient,
     ) {}
 
     private async initializeConfig(): Promise<void> {
@@ -68,13 +68,12 @@ export class MarketplaceService {
         const url = `${this.baseUrl}/rest/3/developer-space/vendor/${vendorId}`;
         console.log(`Calling Marketplace API: ${url}`);
 
-        const response = await axios.get<v3Components['schemas']['DeveloperId']>(url, {
-            headers: {
-                'Authorization': await this.getAuthHeader()
-            }
+        const response = await this.httpClient.get<v3Components['schemas']['DeveloperId']>(url, {
+            headers: await this.getRequestHeaders(),
+            context: `Fetch developer ID for vendor ${vendorId}`,
         });
 
-        return response.data.developerId;
+        return response.developerId;
     }
 
     /**
@@ -108,10 +107,13 @@ export class MarketplaceService {
         }
     }
 
-    private async getAuthHeader(): Promise<string> {
+    private async getRequestHeaders(extraHeaders?: Record<string, string>): Promise<Record<string, string>> {
         await this.initializeConfig();
         const credentials = Buffer.from(`${this.username}:${this.password}`).toString('base64');
-        return `Basic ${credentials}`;
+        return {
+            'Authorization': `Basic ${credentials}`,
+            ...extraHeaders,
+        };
     }
 
     private buildUrlWithParams(baseUrl: string, params: Record<string, any>): string {
@@ -151,17 +153,16 @@ export class MarketplaceService {
         while (status === 'IN_PROGRESS' || status === 'QUEUED') {
             await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds between polls
 
-            const statusResponse = await axios.get<T>(baseUrl + statusLink, {
-                headers: {
-                    'Authorization': await this.getAuthHeader()
-                }
+            const statusResponse = await this.httpClient.get<T>(baseUrl + statusLink, {
+                headers: await this.getRequestHeaders(),
+                context: `Poll async export status (${statusLink})`,
             });
 
-            status = checkStatus(statusResponse.data);
+            status = checkStatus(statusResponse);
             if (status === 'COMPLETED') {
                 resultUrl = baseUrl + downloadLink;
             } else if (status === 'FAILED') {
-                throw new Error(`Export failed: ${statusResponse.data}`);
+                throw new Error(`Export failed: ${JSON.stringify(statusResponse)}`);
             }
         }
 
@@ -173,13 +174,10 @@ export class MarketplaceService {
     }
 
     private async getStreamForResultUrl(resultUrl: string): Promise<Readable> {
-        const response = await axios.get(resultUrl, {
-            responseType: 'stream',
-            headers: {
-                'Authorization': await this.getAuthHeader()
-            }
+        return this.httpClient.getStream(resultUrl, {
+            headers: await this.getRequestHeaders(),
+            context: `Download async export (${resultUrl})`,
         });
-        return response.data as Readable;
     }
 
     /**
@@ -193,16 +191,19 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${exportUrl}`);
 
-        const exportResponse = await axios.post<v3Components["schemas"]["Reports_InitiateAsyncExportTransactions"]>(
+        const exportResponse = await this.httpClient.post<v3Components["schemas"]["Reports_InitiateAsyncExportTransactions"]>(
             exportUrl,
             {},
-            { headers: { 'Authorization': await this.getAuthHeader(), 'Content-Type': 'application/json' } }
+            {
+                headers: await this.getRequestHeaders({ 'Content-Type': 'application/json' }),
+                context: 'Initiate transactions export',
+            }
         );
 
         const resultUrl = await this.pollForCompletion<StatusAsyncTransactionCollection>(
             this.baseUrlV3,
-            exportResponse.data._links.status.href,
-            exportResponse.data._links.download.href,
+            exportResponse._links.status.href,
+            exportResponse._links.download.href,
             (data) => data.export.status
         );
 
@@ -240,19 +241,17 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${exportUrl}`);
 
-        let exportResponse;
-        try {
-            exportResponse = await axios.post<v3Components['schemas']['Reports_InitiateAsyncExportQuotes']>(
-                exportUrl,
-                {},
-                { headers: { 'Authorization': await this.getAuthHeader(), 'Content-Type': 'application/json' } }
-            );
-        } catch (error) {
-            throwMarketplaceApiError(error, 'Failed to initiate quotes export from Atlassian');
-        }
+        const exportResponse = await this.httpClient.post<v3Components['schemas']['Reports_InitiateAsyncExportQuotes']>(
+            exportUrl,
+            {},
+            {
+                headers: await this.getRequestHeaders({ 'Content-Type': 'application/json' }),
+                context: 'Initiate quotes export',
+            }
+        );
 
-        const statusHref = this.fixQuotesExportUrl(exportResponse.data._links.status.href);
-        const downloadHref = this.fixQuotesExportUrl(exportResponse.data._links.download.href);
+        const statusHref = this.fixQuotesExportUrl(exportResponse._links.status.href);
+        const downloadHref = this.fixQuotesExportUrl(exportResponse._links.download.href);
 
         const resultUrl = await this.pollForCompletion<v3Components['schemas']['Reports_GetStatusAsyncExportQuotes']>(
             this.baseUrlV3,
@@ -280,19 +279,10 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${url}`);
 
-        try {
-            const response = await axios.get<v3Components['schemas']['Reports_GetQuoteDetails']>(url, {
-                headers: {
-                    'Authorization': await this.getAuthHeader()
-                }
-            });
-            return response.data;
-        } catch (error) {
-            throwMarketplaceApiError(
-                error,
-                `Failed to fetch quote details from Atlassian (${params.quoteNumber})`
-            );
-        }
+        return this.httpClient.get<v3Components['schemas']['Reports_GetQuoteDetails']>(url, {
+            headers: await this.getRequestHeaders(),
+            context: `Fetch quote details (${params.quoteNumber})`,
+        });
     }
 
     /**
@@ -310,21 +300,24 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${firstExportUrl}`);
 
-        const firstExportResponse = await axios.post<v3Components["schemas"]["Reports_InitiateAsyncExportLicenses"]>(
+        const firstExportResponse = await this.httpClient.post<v3Components["schemas"]["Reports_InitiateAsyncExportLicenses"]>(
             firstExportUrl,
             {},
-            { headers: { 'Authorization': await this.getAuthHeader(), 'Content-Type': 'application/json' } }
+            {
+                headers: await this.getRequestHeaders({ 'Content-Type': 'application/json' }),
+                context: 'Initiate licenses export (batch 1)',
+            }
         );
 
         const firstResultUrl = await this.pollForCompletion<InitiateAsyncLicense>(
             this.baseUrlV3,
-            firstExportResponse.data._links.status.href,
-            firstExportResponse.data._links.download.href,
+            firstExportResponse._links.status.href,
+            firstExportResponse._links.download.href,
             (data) => data.export.status
         );
 
         console.log(`Streaming licenses (batch 1) from API`);
-        const stream1 = await this.getStreamForResultUrl(firstResultUrl)
+        const stream1 = await this.getStreamForResultUrl(firstResultUrl);
 
         const secondExportUrl = this.buildUrlWithParams(
             licenseExportUrl,
@@ -332,16 +325,19 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${secondExportUrl}`);
 
-        const secondExportResponse = await axios.post<InitiateAsyncLicenseCollection>(
+        const secondExportResponse = await this.httpClient.post<InitiateAsyncLicenseCollection>(
             secondExportUrl,
             {},
-            { headers: { 'Authorization': await this.getAuthHeader(), 'Content-Type': 'application/json' } }
+            {
+                headers: await this.getRequestHeaders({ 'Content-Type': 'application/json' }),
+                context: 'Initiate licenses export (batch 2)',
+            }
         );
 
         const secondResultUrl = await this.pollForCompletion<InitiateAsyncLicense>(
             this.baseUrlV3,
-            secondExportResponse.data._links.status.href,
-            secondExportResponse.data._links.download.href,
+            secondExportResponse._links.status.href,
+            secondExportResponse._links.download.href,
             (data) => data.export.status
         );
 
@@ -383,15 +379,17 @@ export class MarketplaceService {
         });
         console.log(`Calling Marketplace API: ${offeringsUrl}`);
 
-        const offeringsResponse = await axios.get<commerceComponents["schemas"]["Offerings_PaginatedResponsePublicOfferingResponse"]>(offeringsUrl, {
-            headers: {
-                'Authorization': await this.getAuthHeader()
+        const offeringsResponse = await this.httpClient.get<commerceComponents["schemas"]["Offerings_PaginatedResponsePublicOfferingResponse"]>(
+            offeringsUrl,
+            {
+                headers: await this.getRequestHeaders(),
+                context: `Fetch offerings for product ${productId}`,
             }
-        });
+        );
 
         let newResult : OurPricingData|undefined = undefined;
 
-        for (const offering of offeringsResponse.data.values) {
+        for (const offering of offeringsResponse.values) {
             const { id } = offering;
 
             // Supported offering names: See https://developer.atlassian.com/platform/marketplace/marketplace-app-pricing-api/
@@ -410,17 +408,19 @@ export class MarketplaceService {
             );
 
             console.log(`Calling Marketplace API: ${pricingPlansUrl}`);
-            const pricingPlansResponse = await axios.get<commerceComponents["schemas"]["Offerings_PaginatedResponsePublicPricingPlanResponse"]>(pricingPlansUrl, {
-                headers: {
-                    'Authorization': await this.getAuthHeader()
+            const pricingPlansResponse = await this.httpClient.get<commerceComponents["schemas"]["Offerings_PaginatedResponsePublicPricingPlanResponse"]>(
+                pricingPlansUrl,
+                {
+                    headers: await this.getRequestHeaders(),
+                    context: `Fetch pricing plans for offering ${id}`,
                 }
-            });
+            );
 
-            // console.log(`Pricing plans found for offering ${id} (${offering.name}): `, pricingPlansResponse.data.values.map(pp => pp.description));
+            // console.log(`Pricing plans found for offering ${id} (${offering.name}): `, pricingPlansResponse.values.map(pp => pp.description));
             // console.dir('***Raw pricing plan response:')
-            // console.dir(pricingPlansResponse.data);
+            // console.dir(pricingPlansResponse);
 
-            const commercialPricingPlans = pricingPlansResponse.data.values.filter(pp => pp.currency === 'USD' && pp.type==='COMMERCIAL');
+            const commercialPricingPlans = pricingPlansResponse.values.filter(pp => pp.currency === 'USD' && pp.type==='COMMERCIAL');
 
             for (const commercialPricingPlan of commercialPricingPlans) {
                 // console.log('Commercial pricing plan found:');
@@ -521,19 +521,10 @@ export class MarketplaceService {
         while (nextUrl) {
             console.log(`Calling Marketplace API: ${nextUrl}`);
 
-            let page: GetLicensesResponse;
-            try {
-                page = (await axios.get<GetLicensesResponse>(nextUrl, {
-                    headers: {
-                        'Authorization': await this.getAuthHeader()
-                    }
-                })).data;
-            } catch (error) {
-                throwMarketplaceApiError(
-                    error,
-                    `Failed to fetch license history from Atlassian (${searchText})`
-                );
-            }
+            const page: GetLicensesResponse = await this.httpClient.get<GetLicensesResponse>(nextUrl, {
+                headers: await this.getRequestHeaders(),
+                context: `Fetch license history (${searchText})`,
+            });
 
             const licenses = page.licenses;
             if (Array.isArray(licenses)) {
@@ -557,68 +548,55 @@ export class MarketplaceService {
         );
         console.log(`Calling Marketplace API: ${url}`);
 
-        const response = await axios.get<ListingResponse>(url, {
-            headers: {
-                'Authorization': await this.getAuthHeader(),
+        const response = await this.httpClient.get<ListingResponse>(url, {
+            headers: await this.getRequestHeaders({
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-            }
+            }),
+            context: 'Fetch vendor-specific addons',
         });
 
-        if (response.data.links.next) {
+        if (response.links.next) {
             throw new Error('Pagination not supported yet: maximum number of registered apps exceeded');
         }
 
-        return response.data.items.map(item => ({ key: item.appKey, name: item.appName, productId: item.productId }));
+        return response.items.map(item => ({ key: item.appKey, name: item.appName, productId: item.productId }));
     }
 
     async getParentProductForAddon(appKey: string): Promise<string|undefined> {
         await this.initializeConfig();
 
-        // Convert the appKey to the softwareId (which is somehow different from the productId)
         const softwareIdUrl = `${this.baseUrlV3}/app-software/app-key/${appKey}`;
         console.log(`Calling Marketplace API: ${softwareIdUrl}`);
 
-        const softwareIdResponse = await axios.get<v3Components["schemas"]["AppSoftwareByAppKeyResponse"][]>(softwareIdUrl, {
-            headers: {
-                'Authorization': await this.getAuthHeader()
+        const softwareIdResponse = await this.httpClient.get<v3Components["schemas"]["AppSoftwareByAppKeyResponse"][]>(
+            softwareIdUrl,
+            {
+                headers: await this.getRequestHeaders(),
+                context: `Fetch app software ID for ${appKey}`,
             }
-        });
+        );
 
-        const softwareId = softwareIdResponse.data[0].appSoftwareId;
-
-        // Get the versions for this app, which we use to extract the parentSoftwareId
+        const softwareId = softwareIdResponse[0].appSoftwareId;
 
         const versionsUrl = `${this.baseUrlV3}/app-software/${softwareId}/versions`;
         console.log(`Calling Marketplace API: ${versionsUrl}`);
 
-        const response = await axios.get<v3Components["schemas"]["AppSoftwareVersionsGetResponse"]>(versionsUrl, {
-            headers: {
-                'Authorization': await this.getAuthHeader()
+        const response = await this.httpClient.get<v3Components["schemas"]["AppSoftwareVersionsGetResponse"]>(
+            versionsUrl,
+            {
+                headers: await this.getRequestHeaders(),
+                context: `Fetch app software versions for ${appKey}`,
             }
-        });
+        );
 
-        if (!response.data.versions || response.data.versions.length === 0) {
+        if (!response.versions || response.versions.length === 0) {
             return undefined;
         }
 
-        const parentSoftwareId = response.data.versions[0].compatibilities ? response.data.versions[0].compatibilities[0].parentSoftwareId : undefined;
+        const parentSoftwareId = response.versions[0].compatibilities
+            ? response.versions[0].compatibilities[0].parentSoftwareId
+            : undefined;
 
         return parentSoftwareId;
-
-        // The parentSoftwareId is currently a string like "confluence" or "jira", so we can return it directly, rather than going through
-        // the next step to fetch the name (which serves just to capitalize the first letter)
-
-        /*
-        // Now fetch the parent software to get the name
-
-        const parentSoftwareUrl = `${this.baseUrlV3}/parent-software/${parentSoftwareId}`;
-        console.log(`Calling Marketplace API: ${parentSoftwareUrl}`);
-
-        const parentSoftwareResponse = await axios.get<v3Components["schemas"]["ParentSoftwareGetResponse"]>(parentSoftwareUrl, {
-            headers: { 'Authorization': await this.getAuthHeader() }
-        });
-
-        return parentSoftwareResponse.data.name;
-        */
     }
 }

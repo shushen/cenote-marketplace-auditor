@@ -1,6 +1,7 @@
 import { deepEqual, normalizeObject } from '../objectUtils.js';
 import {
     normalizeQuoteAggregateData,
+    normalizeQuoteDetailsData,
     normalizeQuoteScheduleData,
 } from '../quoteAggregateUtils.js';
 
@@ -62,6 +63,42 @@ describe('quoteAggregateUtils', () => {
             }));
 
             expect(deepEqual(withEmptyDiscounts, withoutDiscounts)).toBe(true);
+        });
+
+        it('omits details-only fields like createdBy from aggregate data', () => {
+            const normalized = normalizeQuoteAggregateData({
+                quoteNumber: 'QT-123',
+                createdBy: 'CUSTOMER_ADVOCATE',
+                vendorId: '1215549',
+                quoteId: 'quote-id',
+                lines: [],
+            });
+
+            expect(normalized).toEqual({
+                quoteNumber: 'QT-123',
+                lines: [],
+            });
+        });
+    });
+
+    describe('normalizeQuoteDetailsData', () => {
+        it('treats missing and empty createdBy the same', () => {
+            const withCreatedBy = normalizeObject(normalizeQuoteDetailsData({
+                quoteNumber: 'QT-123',
+                createdBy: 'CUSTOMER_ADVOCATE',
+            }));
+
+            const withoutCreatedBy = normalizeObject(normalizeQuoteDetailsData({
+                quoteNumber: 'QT-123',
+            }));
+
+            const withEmptyCreatedBy = normalizeObject(normalizeQuoteDetailsData({
+                quoteNumber: 'QT-123',
+                createdBy: '   ',
+            }));
+
+            expect(deepEqual(withCreatedBy, withoutCreatedBy)).toBe(false);
+            expect(deepEqual(withoutCreatedBy, withEmptyCreatedBy)).toBe(true);
         });
     });
 });

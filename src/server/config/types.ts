@@ -7,6 +7,7 @@
 export const TYPES = {
     DataSource: Symbol.for('DataSource'),
     MarketplaceService: Symbol.for('MarketplaceService'),
+    MarketplaceHttpClient: Symbol.for('MarketplaceHttpClient'),
     AddonJob: Symbol.for('AddonJob'),
     AddonDao: Symbol.for('AddonDao'),
     PricingDao: Symbol.for('PricingDao'),
