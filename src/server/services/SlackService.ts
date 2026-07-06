@@ -9,9 +9,16 @@ import { formatCurrency } from '#common/util/formatCurrency.js';
 import { dateDiff } from '#common/util/dateUtils.js';
 import { Transaction } from '#common/entities/Transaction.js';
 import { License } from '#common/entities/License.js';
+import { Quote } from '#common/entities/Quote.js';
 import { LicenseData } from '#common/types/marketplace.js';
 import { TransactionValidationResult } from './transactionValidation/types.js';
 import { getLicenseDisplayId, getTransactionDisplayId } from '#common/util/displayIdUtils.js';
+import {
+    formatUniqueLineValues,
+    getLineCount,
+    getScheduleDateRange,
+    getTotalListPrice,
+} from '#common/util/quoteAggregateUtils.js';
 
 export type SlackBlock = (KnownBlock | Block);
 
@@ -43,6 +50,19 @@ export interface SlackLicenseData {
     oldMaintenanceEndDate: string|undefined;
     extended: boolean;
     evaluationOpportunitySize: string|undefined;
+}
+
+export interface SlackQuoteData {
+    quoteNumber: string;
+    quoteStatus: string | undefined;
+    quoteCreatedDate: string | undefined;
+    quoteExpiryDate: string | undefined;
+    company: string;
+    productNames: string;
+    lineCount: number;
+    totalListPrice: number | undefined;
+    scheduleStartDate: string | undefined;
+    scheduleEndDate: string | undefined;
 }
 
 @injectable()
@@ -192,6 +212,23 @@ export class SlackService {
             maintenanceStartDate: maintenanceStartDate,
             maintenanceEndDate: maintenanceEndDate,
             entitlementId: getTransactionDisplayId(transaction.data)
+        };
+    }
+
+    public mapQuoteForSlack(quote: Quote): SlackQuoteData {
+        const { startDate, endDate } = getScheduleDateRange(quote.data);
+
+        return {
+            quoteNumber: quote.marketplaceQuoteNumber,
+            quoteStatus: quote.data.quoteStatus,
+            quoteCreatedDate: quote.data.quoteCreatedDate,
+            quoteExpiryDate: quote.data.quoteExpiryDate,
+            company: formatUniqueLineValues(quote.data, line => line.technicalContactCompany) || 'Unknown',
+            productNames: formatUniqueLineValues(quote.data, line => line.productName) || 'Unknown',
+            lineCount: getLineCount(quote.data),
+            totalListPrice: getTotalListPrice(quote.data),
+            scheduleStartDate: startDate,
+            scheduleEndDate: endDate,
         };
     }
 
@@ -419,6 +456,114 @@ export class SlackService {
             }
 
             await this.postMessage(SlackChannelType.Evaluations, message, blocks);
+        }
+    }
+
+    public async postNewQuotesToSlack(quotes: SlackQuoteData[]): Promise<void> {
+        const baseUrl = await this.getBaseUrl();
+        const totalListPrice = quotes.reduce((acc, quote) => acc + (quote.totalListPrice ?? 0), 0);
+        const hasTotalListPrice = quotes.some(quote => quote.totalListPrice !== undefined);
+
+        const MAX_BLOCKS = 50;
+        const BLOCKS_PER_QUOTE = 3;
+        const BLOCKS_FOR_HEADER_AND_DIVIDER = 2;
+        const maxQuotesPerMessage = Math.floor((MAX_BLOCKS - BLOCKS_FOR_HEADER_AND_DIVIDER - 2) / BLOCKS_PER_QUOTE);
+
+        const totalMessages = Math.ceil(quotes.length / maxQuotesPerMessage);
+
+        for (let messageIndex = 0; messageIndex < totalMessages; messageIndex++) {
+            const startIndex = messageIndex * maxQuotesPerMessage;
+            const endIndex = Math.min(startIndex + maxQuotesPerMessage, quotes.length);
+            const batch = quotes.slice(startIndex, endIndex);
+
+            let headerText: string;
+            const totalSuffix = hasTotalListPrice ? ` - ${formatCurrency(totalListPrice)}` : '';
+            if (totalMessages > 1) {
+                headerText = `📋 ${quotes.length} New Quote${quotes.length > 1 ? 's' : ''}${totalSuffix} (Part ${messageIndex + 1} of ${totalMessages})`;
+            } else {
+                headerText = `📋 ${quotes.length} New Quote${quotes.length > 1 ? 's' : ''}${totalSuffix}`;
+            }
+
+            const message = encodeSlackText(headerText);
+
+            const blocks: SlackBlock[] = [
+                {
+                    type: 'header',
+                    text: {
+                        type: 'plain_text',
+                        text: message,
+                        emoji: true
+                    }
+                },
+                {
+                    type: 'divider'
+                }
+            ];
+
+            for (const quote of batch) {
+                const quoteUrl = `${baseUrl}/quotes?search=${encodeURIComponent(quote.quoteNumber)}`;
+                const quoteNumberText = encodeSlackText(quote.quoteNumber);
+                const listPriceText = quote.totalListPrice !== undefined
+                    ? formatCurrency(quote.totalListPrice)
+                    : 'Unknown';
+
+                blocks.push(
+                    {
+                        type: 'section',
+                        text: {
+                            type: 'mrkdwn',
+                            text: encodeSlackText(`*${quote.productNames}* - *${quote.quoteStatus ?? 'Unknown'}* - ${listPriceText}`)
+                        }
+                    },
+                    {
+                        type: 'section',
+                        fields: [
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Customer:\n*${quote.company}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: `Quote Number:\n<${quoteUrl}|*${quoteNumberText}*>`
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Created Date:\n*${quote.quoteCreatedDate ?? 'Unknown'}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Expiry Date:\n*${quote.quoteExpiryDate ?? 'Unknown'}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Lines:\n*${quote.lineCount}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`List Price:\n*${listPriceText}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Schedule Start Date:\n*${quote.scheduleStartDate ?? 'Unknown'}*`)
+                            },
+                            {
+                                type: 'mrkdwn',
+                                text: encodeSlackText(`Schedule End Date:\n*${quote.scheduleEndDate ?? 'Unknown'}*`)
+                            }
+                        ]
+                    },
+                    {
+                        type: 'divider'
+                    }
+                );
+            }
+
+            if (blocks.length > MAX_BLOCKS) {
+                console.error(`Error: Quote message exceeds ${MAX_BLOCKS} blocks (${blocks.length}). This should not happen.`);
+                blocks.splice(MAX_BLOCKS);
+            }
+
+            await this.postMessage(SlackChannelType.Quotes, message, blocks);
         }
     }
 

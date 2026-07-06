@@ -8,18 +8,21 @@ import { QuoteData, QuoteDetailsData, QuoteAggregateData } from '#common/types/m
 import {
     buildQuoteAggregateData,
     getQuoteNumberFromRow,
+    normalizeQuoteAggregateData,
 } from '#common/util/quoteAggregateUtils.js';
 import { TYPES } from '../config/types.js';
 import { inject, injectable } from 'inversify';
 import { QuoteDao } from '../database/dao/QuoteDao.js';
 import { QuoteVersionDao } from '#server/database/dao/QuoteVersionDao.js';
 import { MarketplaceService } from '../services/MarketplaceService.js';
+import { SlackService, SlackQuoteData } from '#server/services/SlackService.js';
 
 export interface ProcessOneQuoteResult {
     processed: number;
     new: number;
     modified: number;
     skipped: number;
+    slackData?: SlackQuoteData;
 }
 
 const QUOTE_DETAILS_CONCURRENCY = 10;
@@ -34,7 +37,8 @@ export class QuoteJob {
     constructor(
         @inject(TYPES.QuoteDao) private quoteDao: QuoteDao,
         @inject(TYPES.QuoteVersionDao) private quoteVersionDao: QuoteVersionDao,
-        @inject(TYPES.MarketplaceService) private marketplaceService: MarketplaceService
+        @inject(TYPES.MarketplaceService) private marketplaceService: MarketplaceService,
+        @inject(TYPES.SlackService) private slackService: SlackService
     ) {}
 
     async processOneQuote(
@@ -44,12 +48,13 @@ export class QuoteJob {
     ): Promise<ProcessOneQuoteResult> {
         const existingQuote = await this.quoteDao.getQuoteForQuoteNumber(quoteNumber);
 
-        const normalizedData = normalizeObject(quoteData);
+        const normalizedData = normalizeObject(normalizeQuoteAggregateData(quoteData));
         const normalizedDetails = normalizeObject(detailsData);
         let currentVersion = 1;
 
         if (existingQuote) {
-            const quoteChanged = !deepEqual(existingQuote.data, normalizedData);
+            const existingNormalizedData = normalizeObject(normalizeQuoteAggregateData(existingQuote.data));
+            const quoteChanged = !deepEqual(existingNormalizedData, normalizedData);
             const detailsChanged = !deepEqual(existingQuote.details, normalizedDetails);
 
             if (!quoteChanged && !detailsChanged) {
@@ -57,7 +62,7 @@ export class QuoteJob {
             }
 
             const changedQuotePaths = quoteChanged
-                ? computeJsonPaths(existingQuote.data, normalizedData)
+                ? computeJsonPaths(existingNormalizedData, normalizedData)
                 : [];
             const changedDetailsPaths = detailsChanged
                 ? computeJsonPaths(existingQuote.details, normalizedDetails)
@@ -66,7 +71,7 @@ export class QuoteJob {
             console.log(`Quote changed: ${quoteNumber}`);
             if (changedQuotePaths.length > 0) {
                 console.log('Changed quote paths:', changedQuotePaths.join(' | '));
-                printJsonDiff(existingQuote.data, normalizedData);
+                printJsonDiff(existingNormalizedData, normalizedData);
             }
             if (changedDetailsPaths.length > 0) {
                 console.log('Changed details paths:', changedDetailsPaths.join(' | '));
@@ -113,7 +118,8 @@ export class QuoteJob {
         const company = normalizedData.lines[0]?.technicalContactCompany ?? 'unknown company';
         console.log(`Created new quote: ${quoteNumber} (${company})`);
 
-        return { processed: 1, new: 1, modified: 0, skipped: 0 };
+        const slackData = this.slackService.mapQuoteForSlack(quote);
+        return { processed: 1, new: 1, modified: 0, skipped: 0, slackData };
     }
 
     private async fetchAndProcessQuoteGroup(group: QuoteGroup): Promise<ProcessOneQuoteResult> {
@@ -136,13 +142,14 @@ export class QuoteJob {
     private async processQuoteGroupsInParallel(
         groups: QuoteGroup[],
         onProgress?: (current: number, total: number) => void | Promise<void>
-    ): Promise<{ processed: number; new: number; modified: number; skipped: number }> {
+    ): Promise<{ processed: number; new: number; modified: number; skipped: number; newQuotes: SlackQuoteData[] }> {
         const total = groups.length;
         let nextGroupIndex = 0;
         let processedCount = 0;
         let newCount = 0;
         let modifiedCount = 0;
         let skippedCount = 0;
+        const newQuotes: SlackQuoteData[] = [];
 
         const worker = async (): Promise<void> => {
             while (true) {
@@ -158,6 +165,9 @@ export class QuoteJob {
                 newCount += result.new;
                 modifiedCount += result.modified;
                 skippedCount += result.skipped;
+                if (result.slackData) {
+                    newQuotes.push(result.slackData);
+                }
 
                 if ((processedCount % 10) === 0 || processedCount === total) {
                     await onProgress?.(processedCount, total);
@@ -168,7 +178,7 @@ export class QuoteJob {
         const workerCount = Math.min(QUOTE_DETAILS_CONCURRENCY, groups.length);
         await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
-        return { processed: processedCount, new: newCount, modified: modifiedCount, skipped: skippedCount };
+        return { processed: processedCount, new: newCount, modified: modifiedCount, skipped: skippedCount, newQuotes };
     }
 
     /**
@@ -179,6 +189,7 @@ export class QuoteJob {
         responseStream: Readable,
         onProgress?: (current: number, total?: number) => void | Promise<void>
     ): Promise<void> {
+        const originalQuoteCount = await this.quoteDao.getQuoteCount();
         const groupedRows = new Map<string, QuoteGroup>();
         let streamedRowCount = 0;
 
@@ -211,7 +222,7 @@ export class QuoteJob {
             await onProgress?.(0, quoteCount);
         }
 
-        const { processed: processedCount, new: newCount, modified: modifiedCount, skipped: skippedCount } =
+        const { processed: processedCount, new: newCount, modified: modifiedCount, skipped: skippedCount, newQuotes } =
             await this.processQuoteGroupsInParallel(groups, async (current, total) => {
                 await onProgress?.(current, total);
             });
@@ -222,5 +233,11 @@ export class QuoteJob {
             `Completed processing ${streamedRowCount} quote rows into ${groups.length} quotes; ` +
             `${newCount} were new; ${modifiedCount} were updated; ${skippedCount} were unchanged`
         );
+
+        if (originalQuoteCount > 0 &&
+            newQuotes.length > 0 &&
+            processedCount !== newCount) {
+            await this.slackService.postNewQuotesToSlack(newQuotes);
+        }
     }
 }

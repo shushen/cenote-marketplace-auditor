@@ -1,5 +1,6 @@
 export enum SlackChannelType {
     Sales = 'Sales',
     Evaluations = 'Evaluations',
-    Exceptions = 'Exceptions'
+    Exceptions = 'Exceptions',
+    Quotes = 'Quotes',
 }

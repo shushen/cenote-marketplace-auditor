@@ -95,8 +95,6 @@ export const QuoteDetailsDialog: React.FC<QuoteDetailsProps> = ({ quoteResult, o
                                     <TableCell>{isoStringWithDateAndTime(quote.updatedAt.toString())}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <InfoTableHeader>Quote Number</InfoTableHeader>
-                                    <TableCell>{summary.quoteNumber ?? quote.marketplaceQuoteNumber}</TableCell>
                                     <InfoTableHeader>Quote Version</InfoTableHeader>
                                     <TableCell>
                                         <Link
@@ -108,16 +106,12 @@ export const QuoteDetailsDialog: React.FC<QuoteDetailsProps> = ({ quoteResult, o
                                             {quote.currentVersion}
                                         </Link>
                                     </TableCell>
-                                </TableRow>
-                                <TableRow>
                                     <InfoTableHeader>Lines</InfoTableHeader>
                                     <TableCell>{getLineCount(quote.data)}</TableCell>
-                                    <InfoTableHeader>Schedules</InfoTableHeader>
-                                    <TableCell>{getScheduleCount(quote.data)}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <InfoTableHeader>Status</InfoTableHeader>
-                                    <TableCell>{summary.quoteStatus ?? quote.data.quoteStatus ?? ''}</TableCell>
+                                    <InfoTableHeader>Schedules</InfoTableHeader>
+                                    <TableCell>{getScheduleCount(quote.data)}</TableCell>
                                     <InfoTableHeader>Company</InfoTableHeader>
                                     <TableCell>{formatUniqueLineValues(quote.data, line => line.technicalContactCompany)}</TableCell>
                                 </TableRow>

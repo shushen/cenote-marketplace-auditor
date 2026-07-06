@@ -12,6 +12,7 @@ export function getConfigKeyType(key: ConfigKey): ConfigValueType {
         case ConfigKey.SlackChannelSales:
         case ConfigKey.SlackChannelEvaluations:
         case ConfigKey.SlackChannelExceptions:
+        case ConfigKey.SlackChannelQuotes:
             return 'string';
         case ConfigKey.SchedulerFrequency:
             return 'number';

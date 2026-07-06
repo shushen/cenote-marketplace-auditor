@@ -30,6 +30,7 @@ export const ConfigPage: React.FC = () => {
         [ConfigKey.SlackChannelSales]: '',
         [ConfigKey.SlackChannelEvaluations]: '',
         [ConfigKey.SlackChannelExceptions]: '',
+        [ConfigKey.SlackChannelQuotes]: '',
         [ConfigKey.DemoMode]: false,
     });
     const [loading, setLoading] = useState(true);
@@ -177,6 +178,7 @@ export const ConfigPage: React.FC = () => {
                 [ConfigKey.SlackChannelSales]: '',
                 [ConfigKey.SlackChannelEvaluations]: '',
                 [ConfigKey.SlackChannelExceptions]: '',
+                [ConfigKey.SlackChannelQuotes]: '',
             }));
         }
     };
@@ -357,6 +359,17 @@ export const ConfigPage: React.FC = () => {
                                             startAdornment: <span>#</span>,
                                         }}
                                         helperText="Channel to post exception notifications. Leave blank to disable."
+                                    />
+                                    <TextField
+                                        label="Channel for Quotes"
+                                        value={configValues[ConfigKey.SlackChannelQuotes]}
+                                        onChange={handleChange(ConfigKey.SlackChannelQuotes)}
+                                        fullWidth
+                                        sx={{ mt: 2 }}
+                                        InputProps={{
+                                            startAdornment: <span>#</span>,
+                                        }}
+                                        helperText="Channel to post new quote notifications. Leave blank to disable."
                                     />
                                 </>
                             )}

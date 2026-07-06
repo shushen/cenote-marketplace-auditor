@@ -20,14 +20,39 @@ export function getLineKeyFromRow(row: QuoteData): string {
         || '';
 }
 
-export function extractScheduleFromRow(row: QuoteData): QuoteScheduleData {
+export function normalizeQuoteScheduleData(schedule: QuoteScheduleData): QuoteScheduleData {
+    const normalized: QuoteScheduleData = {
+        startDate: schedule.startDate,
+        endDate: schedule.endDate,
+        userTier: schedule.userTier,
+        listPrice: schedule.listPrice,
+    };
+
+    if (schedule.discounts?.length) {
+        normalized.discounts = schedule.discounts;
+    }
+
+    return normalized;
+}
+
+export function normalizeQuoteAggregateData(data: QuoteAggregateData): QuoteAggregateData {
     return {
+        ...data,
+        lines: data.lines.map(line => ({
+            ...line,
+            schedules: line.schedules.map(normalizeQuoteScheduleData),
+        })),
+    };
+}
+
+export function extractScheduleFromRow(row: QuoteData): QuoteScheduleData {
+    return normalizeQuoteScheduleData({
         startDate: row.startDate,
         endDate: row.endDate,
         userTier: row.userTier,
         listPrice: row.listPrice,
         discounts: row.discounts,
-    };
+    });
 }
 
 export function sortSchedules(schedules: QuoteScheduleData[]): QuoteScheduleData[] {
