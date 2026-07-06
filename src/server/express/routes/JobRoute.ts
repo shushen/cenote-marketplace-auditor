@@ -104,6 +104,9 @@ export class JobRoute {
                     case JobType.LicenseJob:
                         this.jobStarter.startLicenseJob(false);
                         break;
+                    case JobType.QuoteJob:
+                        this.jobStarter.startQuoteJob(false);
+                        break;
                     case JobType.ValidationJob:
                         this.jobStarter.startValidationJob(undefined, false);
                         break;

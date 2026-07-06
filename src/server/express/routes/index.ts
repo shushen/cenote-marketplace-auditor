@@ -15,6 +15,7 @@ import { AuthRoute } from './AuthRoute.js';
 import { UserRoute } from './UserRoute.js';
 import { ApportionmentRoute } from './ApportionmentRoute.js';
 import { QuoteRoute } from './QuoteRoute.js';
+import { QuoteVersionRoute } from './QuoteVersionRoute.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { requireAdmin } from '../middleware/adminMiddleware.js';
 
@@ -36,7 +37,8 @@ export class ApiRouter {
         @inject(EXPRESS_TYPES.AuthRoute) private authRoute: AuthRoute,
         @inject(EXPRESS_TYPES.UserRoute) private userRoute: UserRoute,
         @inject(EXPRESS_TYPES.ApportionmentRoute) private apportionmentRoute: ApportionmentRoute,
-        @inject(EXPRESS_TYPES.QuoteRoute) private quoteRoute: QuoteRoute
+        @inject(EXPRESS_TYPES.QuoteRoute) private quoteRoute: QuoteRoute,
+        @inject(EXPRESS_TYPES.QuoteVersionRoute) private quoteVersionRoute: QuoteVersionRoute
     ) {
         this.router = Router();
         this.initializeRoutes();
@@ -76,8 +78,9 @@ export class ApiRouter {
         this.router.use('/licenses', this.licenseRoute.router);
         this.router.use('/licenses', this.licenseVersionRoute.router);
 
-        // Quote routes (live fetch from Atlassian)
+        // Quote routes
         this.router.use('/quotes', this.quoteRoute.router);
+        this.router.use('/quotes', this.quoteVersionRoute.router);
 
         // Config routes (admin only)
         this.router.use('/config', requireAdmin(), this.configRoute.getRouter());

@@ -4,6 +4,8 @@ import { Transaction } from '#common/entities/Transaction.js';
 import { TransactionVersion } from '#common/entities/TransactionVersion.js';
 import { License } from '#common/entities/License.js';
 import { LicenseVersion } from '#common/entities/LicenseVersion.js';
+import { Quote } from '#common/entities/Quote.js';
+import { QuoteVersion } from '#common/entities/QuoteVersion.js';
 import { Addon } from '#common/entities/Addon.js';
 import { Pricing } from '#common/entities/Pricing.js';
 import { PricingInfo } from '#common/entities/PricingInfo.js';
@@ -12,6 +14,7 @@ import { UpdateExistingRecords1711234567891 } from '../database/migrations/17112
 import { InitializeIgnoredFields1711234567892 } from '../database/migrations/1711234567892-InitializeIgnoredFields.js';
 import { AddAddonForgeColumns1711234567893 } from '../database/migrations/1711234567893-AddAddonForgeColumns.js';
 import { AddAddonProductId1711234567894 } from '../database/migrations/1711234567894-AddAddonProductId.js';
+import { AddQuoteTables1711234567898 } from '../database/migrations/1711234567898-AddQuoteTables.js';
 import { IgnoredField } from '#common/entities/IgnoredField.js';
 import { TransactionReconcile } from '#common/entities/TransactionReconcile.js';
 import { Reseller } from '#common/entities/Reseller.js';
@@ -53,6 +56,8 @@ export const AppDataSource = new DataSource({
         TransactionVersion,
         License,
         LicenseVersion,
+        Quote,
+        QuoteVersion,
         Addon,
         Pricing,
         PricingInfo,
@@ -70,7 +75,8 @@ export const AppDataSource = new DataSource({
         UpdateExistingRecords1711234567891,
         InitializeIgnoredFields1711234567892,
         AddAddonForgeColumns1711234567893,
-        AddAddonProductId1711234567894
+        AddAddonProductId1711234567894,
+        AddQuoteTables1711234567898
     ],
 });
 

@@ -1,164 +1,170 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Dialog,
     DialogTitle,
     DialogContent,
+    Link,
     Table,
     TableBody,
     TableCell,
     TableRow,
+    Button,
     Box,
-    CircularProgress,
-    Alert,
+    Typography,
 } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
-import { Quote, QuoteDetails } from '#common/types/marketplace.js';
+import { QuoteResult } from '#common/types/apiTypes.js';
 import { JsonTreeView } from '../../components/JsonTreeView';
 import {
     InfoTableBox,
     InfoTableHeader,
     TreeViewScrollContainer,
-    TreeViewScrollContent,
-    DialogLoadingBox,
+    TreeViewScrollContent
 } from '../../components/styles';
 import { collectIds } from '#client/util/collectIds.js';
 import { CloseButton } from '../../components/CloseButton';
-import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
-import { formatQuoteDetailsData } from './quoteUtils';
+import { isoStringWithDateAndTime, isoStringWithOnlyDate } from '#common/util/dateUtils.js';
+import {
+    formatUniqueLineValues,
+    getLineCount,
+    getScheduleCount,
+} from '#common/util/quoteAggregateUtils.js';
+import { formatQuoteDetailsDataWithoutLines, getQuoteLinesForDisplay } from './quoteUtils';
+import { QuoteVersionListDialog } from './QuoteVersionListDialog';
+import { QuoteLinesSection } from './QuoteLinesSection';
+import { QuoteDetailsHeadingBox } from './styles';
 
 interface QuoteDetailsProps {
-    quote: Quote | null;
+    quoteResult: QuoteResult | null;
     open: boolean;
     onClose: () => void;
 }
 
-export const QuoteDetailsDialog: React.FC<QuoteDetailsProps> = ({ quote, open, onClose }) => {
-    const [details, setDetails] = useState<QuoteDetails | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export const QuoteDetailsDialog: React.FC<QuoteDetailsProps> = ({ quoteResult, open, onClose }) => {
+    const [showVersions, setShowVersions] = useState(false);
 
-    useEffect(() => {
-        if (!open || !quote?.quoteNumber) {
-            setDetails(null);
-            setError(null);
-            setLoading(false);
-            return;
-        }
+    if (!quoteResult) return null;
 
-        const abortController = new AbortController();
-
-        const loadQuoteDetails = async () => {
-            setLoading(true);
-            setError(null);
-            setDetails(null);
-
-            try {
-                const params = new URLSearchParams({ quoteNumber: quote.quoteNumber! });
-                if (quote.entitlementNumber) {
-                    params.set('entitlementNumber', quote.entitlementNumber);
-                }
-
-                const response = await fetch(`/api/quotes/details?${params.toString()}`, {
-                    signal: abortController.signal,
-                });
-                const data = await response.json();
-
-                if (!response.ok) {
-                    setError(typeof data?.error === 'string' ? data.error : 'Failed to load quote details');
-                    return;
-                }
-
-                setDetails(data);
-            } catch (fetchError) {
-                if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
-                    return;
-                }
-                console.error('Error fetching quote details:', fetchError);
-                setError('Failed to load quote details');
-            } finally {
-                if (!abortController.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        loadQuoteDetails();
-        return () => abortController.abort();
-    }, [open, quote?.quoteNumber, quote?.entitlementNumber]);
-
-    if (!quote) return null;
-
-    const summary = details ?? quote;
-    const formattedData = details ? formatQuoteDetailsData(details) : null;
-    const allIds = formattedData ? collectIds(formattedData, 'root') : [];
+    const { quote } = quoteResult;
+    const summary = quote.details?.quoteNumber ? quote.details : quote.data;
+    const formattedDetailsData = formatQuoteDetailsDataWithoutLines(quote.details);
+    const detailsIds = collectIds(formattedDetailsData, 'details-root');
+    const quoteLines = getQuoteLinesForDisplay(quote.data, quote.details);
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="lg"
-            fullWidth
-        >
-            <DialogTitle sx={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-                pr: { xs: 11, sm: 8 },
-                position: 'relative'
-            }}>
-                <Box component="span" sx={{ flex: { xs: '1 1 100%', sm: 1 }, minWidth: 0 }}>
-                    Quote Details
-                </Box>
-                <CloseButton onClose={onClose} />
-            </DialogTitle>
-            <DialogContent dividers>
-                <InfoTableBox>
-                    <Table size="small">
-                        <TableBody>
-                            <TableRow>
-                                <InfoTableHeader>Quote Number</InfoTableHeader>
-                                <TableCell>{summary.quoteNumber ?? ''}</TableCell>
-                                <InfoTableHeader>Status</InfoTableHeader>
-                                <TableCell>{summary.quoteStatus ?? ''}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <InfoTableHeader>Created Date</InfoTableHeader>
-                                <TableCell>{summary.quoteCreatedDate ? isoStringWithOnlyDate(summary.quoteCreatedDate) : ''}</TableCell>
-                                <InfoTableHeader>Expiry Date</InfoTableHeader>
-                                <TableCell>{summary.quoteExpiryDate ? isoStringWithOnlyDate(summary.quoteExpiryDate) : ''}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </InfoTableBox>
+        <>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                maxWidth="lg"
+                fullWidth
+            >
+                <DialogTitle sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                    pr: { xs: 11, sm: 8 },
+                    position: 'relative'
+                }}>
+                    <Box component="span" sx={{ flex: { xs: '1 1 100%', sm: 1 }, minWidth: 0 }}>
+                        Quote Details
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setShowVersions(true)}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            Show all versions
+                        </Button>
+                    </Box>
+                    <CloseButton onClose={onClose} />
+                </DialogTitle>
+                <DialogContent dividers>
+                    <InfoTableBox>
+                        <Table size="small">
+                            <TableBody>
+                                <TableRow>
+                                    <InfoTableHeader>Created At</InfoTableHeader>
+                                    <TableCell>{isoStringWithDateAndTime(quote.createdAt.toString())}</TableCell>
+                                    <InfoTableHeader>Updated At</InfoTableHeader>
+                                    <TableCell>{isoStringWithDateAndTime(quote.updatedAt.toString())}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Quote Number</InfoTableHeader>
+                                    <TableCell>{summary.quoteNumber ?? quote.marketplaceQuoteNumber}</TableCell>
+                                    <InfoTableHeader>Quote Version</InfoTableHeader>
+                                    <TableCell>
+                                        <Link
+                                            component="button"
+                                            variant="body2"
+                                            onClick={() => setShowVersions(true)}
+                                            sx={{ textDecoration: 'none' }}
+                                        >
+                                            {quote.currentVersion}
+                                        </Link>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Lines</InfoTableHeader>
+                                    <TableCell>{getLineCount(quote.data)}</TableCell>
+                                    <InfoTableHeader>Schedules</InfoTableHeader>
+                                    <TableCell>{getScheduleCount(quote.data)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Status</InfoTableHeader>
+                                    <TableCell>{summary.quoteStatus ?? quote.data.quoteStatus ?? ''}</TableCell>
+                                    <InfoTableHeader>Company</InfoTableHeader>
+                                    <TableCell>{formatUniqueLineValues(quote.data, line => line.technicalContactCompany)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Created Date</InfoTableHeader>
+                                    <TableCell>{summary.quoteCreatedDate ? isoStringWithOnlyDate(summary.quoteCreatedDate) : (quote.data.quoteCreatedDate ? isoStringWithOnlyDate(quote.data.quoteCreatedDate) : '')}</TableCell>
+                                    <InfoTableHeader>Expiry Date</InfoTableHeader>
+                                    <TableCell>{summary.quoteExpiryDate ? isoStringWithOnlyDate(summary.quoteExpiryDate) : (quote.data.quoteExpiryDate ? isoStringWithOnlyDate(quote.data.quoteExpiryDate) : '')}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Entitlements</InfoTableHeader>
+                                    <TableCell colSpan={3}>{formatUniqueLineValues(quote.data, line => line.entitlementNumber)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <InfoTableHeader>Products</InfoTableHeader>
+                                    <TableCell colSpan={3}>{formatUniqueLineValues(quote.data, line => line.productName)}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </InfoTableBox>
 
-                {error && (
-                    <Alert severity="error" sx={{ mt: 2 }}>
-                        {error}
-                    </Alert>
-                )}
+                    <QuoteDetailsHeadingBox>
+                        <Typography variant="subtitle1" fontWeight="bold" color="text.secondary">
+                            Quote Details
+                        </Typography>
+                    </QuoteDetailsHeadingBox>
 
-                <TreeViewScrollContainer>
-                    <TreeViewScrollContent>
-                        {loading ? (
-                            <DialogLoadingBox>
-                                <CircularProgress />
-                            </DialogLoadingBox>
-                        ) : formattedData ? (
+                    <TreeViewScrollContainer>
+                        <TreeViewScrollContent>
                             <SimpleTreeView
                                 slots={{ expandIcon: ExpandMore, collapseIcon: ExpandLess }}
-                                defaultExpandedItems={allIds}
+                                defaultExpandedItems={detailsIds}
                             >
-                                <JsonTreeView data={formattedData} nodeId="root" humanizeKeys={true} />
+                                <JsonTreeView data={formattedDetailsData} nodeId="details-root" humanizeKeys={true} />
                             </SimpleTreeView>
-                        ) : !error ? (
-                            <DialogLoadingBox>No quote details available</DialogLoadingBox>
-                        ) : null}
-                    </TreeViewScrollContent>
-                </TreeViewScrollContainer>
-            </DialogContent>
-        </Dialog>
+                        </TreeViewScrollContent>
+                    </TreeViewScrollContainer>
+
+                    <QuoteLinesSection lines={quoteLines} />
+                </DialogContent>
+            </Dialog>
+
+            <QuoteVersionListDialog
+                open={showVersions}
+                onClose={() => setShowVersions(false)}
+                quoteResult={quoteResult}
+            />
+        </>
     );
 };

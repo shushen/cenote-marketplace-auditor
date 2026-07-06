@@ -1,5 +1,6 @@
 import { Transaction } from "#common/entities/Transaction.js";
 import { License } from "#common/entities/License.js";
+import { Quote } from "#common/entities/Quote.js";
 
 export interface TransactionResult {
     transaction: Transaction;
@@ -67,6 +68,37 @@ export interface LicenseResult {
 
 export interface LicenseQueryResult {
     licenses: LicenseResult[];
+    total: number;
+    count: number;
+}
+
+export enum QuoteQuerySortType {
+    CreatedAt = 'createdAt',
+    UpdatedAt = 'updatedAt',
+    CreatedDate = 'quoteCreatedDate',
+    ExpiryDate = 'quoteExpiryDate',
+    StartDate = 'startDate',
+    EndDate = 'endDate',
+    VersionCount = 'versionCount',
+    LineCount = 'lineCount',
+    ScheduleCount = 'scheduleCount',
+}
+
+export interface QuoteQueryParams {
+    start?: number;
+    limit?: number;
+    sortBy?: QuoteQuerySortType;
+    sortOrder?: 'ASC' | 'DESC';
+    search?: string;
+}
+
+export interface QuoteResult {
+    quote: Quote;
+    versionCount: number;
+}
+
+export interface QuoteQueryResult {
+    quotes: QuoteResult[];
     total: number;
     count: number;
 }

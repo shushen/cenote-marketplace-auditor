@@ -27,7 +27,8 @@ const JOBS: Job[] = [
     { type: JobType.PricingJob, name: 'Fetch App Pricing', status: null, isRunning: false },
     { type: JobType.TransactionJob, name: 'Fetch Transactions', status: null, isRunning: false },
     { type: JobType.LicenseJob, name: 'Fetch Licenses', status: null, isRunning: false },
-    { type: JobType.ValidationJob, name: 'Validate Transactions', status: null, isRunning: false }
+    { type: JobType.ValidationJob, name: 'Validate Transactions', status: null, isRunning: false },
+    { type: JobType.QuoteJob, name: 'Fetch Quotes', status: null, isRunning: false }
 ];
 
 const formatRunDate = (job: Job) => {

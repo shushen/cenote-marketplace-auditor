@@ -9,8 +9,35 @@ export type InitiateAsyncLicense = components["schemas"]["InitiateAsyncLicense"]
 export type InitiateAsyncTransactionCollection = components["schemas"]["InitiateAsyncTransactionCollection"];
 export type StatusAsyncTransactionCollection = components["schemas"]["StatusAsyncTransactionCollection"];
 export type StatusAsyncQuoteCollection = v3Components["schemas"]["Reports_GetStatusAsyncExportQuotes"];
-export type Quote = v3Components["schemas"]["Quote"];
-export type QuoteDetails = v3Components["schemas"]["Reports_GetQuoteDetails"];
+export type QuoteListRow = v3Components["schemas"]["Quote"];
+/** @alias QuoteListRow */
+export type QuoteData = QuoteListRow;
+export type QuoteDetailsData = v3Components["schemas"]["Reports_GetQuoteDetails"];
+export type QuoteScheduleData = Pick<QuoteListRow, 'startDate' | 'endDate' | 'userTier' | 'listPrice' | 'discounts'>;
+export type QuoteLineAggregate = {
+    entitlementEid?: string;
+    entitlementNumber?: string;
+    commerceProductId?: string;
+    productId?: string;
+    productName?: string;
+    appEdition?: string;
+    technicalContactCompany?: string;
+    technicalEmail?: string;
+    productPlatform?: string;
+    commerceSystem?: string;
+    schedules: QuoteScheduleData[];
+};
+export type QuoteAggregateData = {
+    quoteId?: string;
+    quoteNumber?: string;
+    quoteStatus?: string;
+    quoteCreatedDate?: string;
+    acceptedDate?: string;
+    quoteExpiryDate?: string;
+    createdBy?: string;
+    vendorId?: string;
+    lines: QuoteLineAggregate[];
+};
 
 // BEGIN: Hack to work around problem of missing saleType='Downgrade' in the OpenAPI spec
 

@@ -17,6 +17,7 @@ import { AuthRoute } from '../routes/AuthRoute.js';
 import { UserRoute } from '../routes/UserRoute.js';
 import { ApportionmentRoute } from '../routes/ApportionmentRoute.js';
 import { QuoteRoute } from '../routes/QuoteRoute.js';
+import { QuoteVersionRoute } from '../routes/QuoteVersionRoute.js';
 
 export function configureContainer(dataSource: DataSource): Container {
     const container = configureCommonContainer(dataSource);
@@ -37,6 +38,7 @@ export function configureContainer(dataSource: DataSource): Container {
     container.bind<UserRoute>(EXPRESS_TYPES.UserRoute).to(UserRoute).inSingletonScope();
     container.bind<ApportionmentRoute>(EXPRESS_TYPES.ApportionmentRoute).to(ApportionmentRoute).inSingletonScope();
     container.bind<QuoteRoute>(EXPRESS_TYPES.QuoteRoute).to(QuoteRoute).inSingletonScope();
+    container.bind<QuoteVersionRoute>(EXPRESS_TYPES.QuoteVersionRoute).to(QuoteVersionRoute).inSingletonScope();
 
     return container;
 }

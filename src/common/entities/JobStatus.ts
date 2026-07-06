@@ -4,6 +4,7 @@ export enum JobType {
     AddonJob = 'addon',
     LicenseJob = 'license',
     PricingJob = 'pricing',
+    QuoteJob = 'quote',
     TransactionJob = 'transaction',
     ValidationJob = 'validation',
     SenUpgradeJob = 'senUpgrade'

@@ -1,29 +1,25 @@
+import React from 'react';
 import { ColumnConfig } from '../../components/ColumnConfig';
-import { Quote } from '#common/types/marketplace.js';
+import { QuoteResult, QuoteQuerySortType } from '#common/types/apiTypes.js';
 import { EntitlementIdLink } from '#client/components/styles.js';
 import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
+import {
+    formatScheduleUserTierSummary,
+    formatUniqueLineValues,
+    getLineCount,
+    getScheduleCount,
+    getScheduleDateRange,
+    getTotalListPrice,
+    getUniqueLineValues,
+} from '#common/util/quoteAggregateUtils.js';
 
 export interface QuoteCellContext {}
-
-export enum QuoteQuerySortType {
-    CreatedDate = 'quoteCreatedDate',
-    ExpiryDate = 'quoteExpiryDate',
-    StartDate = 'startDate',
-    EndDate = 'endDate',
-}
 
 function formatQuoteDate(date?: string): string {
     if (!date) {
         return '';
     }
     return isoStringWithOnlyDate(date);
-}
-
-function formatUserTier(userTier?: number): string {
-    if (userTier === undefined || userTier === null) {
-        return '';
-    }
-    return userTier === -1 ? 'Unlimited' : userTier.toString();
 }
 
 function formatListPrice(listPrice?: number): string {
@@ -33,106 +29,127 @@ function formatListPrice(listPrice?: number): string {
     return `$${listPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function toTitleCase(value?: string): string {
-    if (!value) {
+function formatEntitlementSummary(quoteResult: QuoteResult): React.ReactNode {
+    const entitlements = getUniqueLineValues(quoteResult.quote.data, line => line.entitlementNumber);
+    if (entitlements.length === 0) {
         return '';
     }
-    return value
-        .split(/[\s_-]+/)
-        .filter(Boolean)
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
+
+    return entitlements.map((entitlement, index) => (
+        <React.Fragment key={entitlement}>
+            {index > 0 && ', '}
+            <EntitlementIdLink to={`/licenses?search=${encodeURIComponent(entitlement)}`}>
+                {entitlement}
+            </EntitlementIdLink>
+        </React.Fragment>
+    ));
 }
 
-export const defaultQuoteColumns: ColumnConfig<Quote, QuoteCellContext, QuoteQuerySortType>[] = [
+export const defaultQuoteColumns: ColumnConfig<QuoteResult, QuoteCellContext, QuoteQuerySortType>[] = [
     {
         id: 'quoteCreatedDate',
         label: 'Created Date',
         visible: true,
         sortField: QuoteQuerySortType.CreatedDate,
-        renderSimpleCell: (quote) => formatQuoteDate(quote.quoteCreatedDate),
+        renderSimpleCell: (quoteResult) => formatQuoteDate(quoteResult.quote.data.quoteCreatedDate),
+    },
+    {
+        id: 'updatedAt',
+        label: 'Updated Date',
+        visible: true,
+        nowrap: true,
+        sortField: QuoteQuerySortType.UpdatedAt,
+        renderSimpleCell: (quoteResult) => isoStringWithOnlyDate(quoteResult.quote.updatedAt.toString()),
     },
     {
         id: 'quoteNumber',
         label: 'Quote Number',
         visible: true,
         nowrap: true,
-        renderSimpleCell: (quote) => quote.quoteNumber ?? '',
+        renderSimpleCell: (quoteResult) => quoteResult.quote.data.quoteNumber ?? quoteResult.quote.marketplaceQuoteNumber,
     },
     {
         id: 'company',
         label: 'Company',
         visible: true,
-        renderSimpleCell: (quote) => quote.technicalContactCompany ?? '',
+        renderSimpleCell: (quoteResult) => formatUniqueLineValues(quoteResult.quote.data, line => line.technicalContactCompany),
     },
     {
         id: 'quoteStatus',
         label: 'Status',
         visible: true,
-        renderSimpleCell: (quote) => quote.quoteStatus ?? '',
+        renderSimpleCell: (quoteResult) => quoteResult.quote.data.quoteStatus ?? '',
     },
     {
         id: 'quoteExpiryDate',
         label: 'Expiry Date',
         visible: true,
         sortField: QuoteQuerySortType.ExpiryDate,
-        renderSimpleCell: (quote) => formatQuoteDate(quote.quoteExpiryDate),
+        renderSimpleCell: (quoteResult) => formatQuoteDate(quoteResult.quote.data.quoteExpiryDate),
     },
     {
         id: 'entitlementNumber',
         label: 'Entitlement Number',
         visible: true,
         nowrap: true,
-        renderSimpleCell: (quote) => {
-            const entitlementNumber = quote.entitlementNumber ?? '';
-            if (!entitlementNumber) {
-                return '';
-            }
-            return (
-                <EntitlementIdLink to={`/transactions?search=${encodeURIComponent(entitlementNumber)}`}>
-                    {entitlementNumber}
-                </EntitlementIdLink>
-            );
-        },
+        renderSimpleCell: (quoteResult) => formatEntitlementSummary(quoteResult),
     },
     {
         id: 'productName',
         label: 'Product Name',
         visible: true,
-        renderSimpleCell: (quote) => quote.productName ?? '',
+        renderSimpleCell: (quoteResult) => formatUniqueLineValues(quoteResult.quote.data, line => line.productName),
     },
     {
-        id: 'productPlatform',
-        label: 'Product Platform',
+        id: 'lineCount',
+        label: 'Lines',
         visible: true,
-        renderSimpleCell: (quote) => toTitleCase(quote.productPlatform),
+        sortField: QuoteQuerySortType.LineCount,
+        align: 'right',
+        renderSimpleCell: (quoteResult) => getLineCount(quoteResult.quote.data),
+    },
+    {
+        id: 'scheduleCount',
+        label: 'Schedules',
+        visible: true,
+        sortField: QuoteQuerySortType.ScheduleCount,
+        align: 'right',
+        renderSimpleCell: (quoteResult) => getScheduleCount(quoteResult.quote.data),
     },
     {
         id: 'startDate',
         label: 'Start Date',
         visible: true,
         sortField: QuoteQuerySortType.StartDate,
-        renderSimpleCell: (quote) => formatQuoteDate(quote.startDate),
+        renderSimpleCell: (quoteResult) => formatQuoteDate(getScheduleDateRange(quoteResult.quote.data).startDate),
     },
     {
         id: 'endDate',
         label: 'End Date',
         visible: true,
         sortField: QuoteQuerySortType.EndDate,
-        renderSimpleCell: (quote) => formatQuoteDate(quote.endDate),
+        renderSimpleCell: (quoteResult) => formatQuoteDate(getScheduleDateRange(quoteResult.quote.data).endDate),
     },
     {
         id: 'userTier',
         label: 'User Tier',
         visible: true,
         align: 'right',
-        renderSimpleCell: (quote) => formatUserTier(quote.userTier),
+        renderSimpleCell: (quoteResult) => formatScheduleUserTierSummary(quoteResult.quote.data),
     },
     {
         id: 'listPrice',
         label: 'List Price',
         visible: true,
         align: 'right',
-        renderSimpleCell: (quote) => formatListPrice(quote.listPrice),
+        renderSimpleCell: (quoteResult) => formatListPrice(getTotalListPrice(quoteResult.quote.data)),
+    },
+    {
+        id: 'versionCount',
+        label: 'Versions',
+        visible: true,
+        sortField: QuoteQuerySortType.VersionCount,
+        align: 'right',
+        renderSimpleCell: (quoteResult) => quoteResult.versionCount,
     },
 ];

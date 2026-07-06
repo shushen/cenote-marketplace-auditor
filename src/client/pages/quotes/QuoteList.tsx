@@ -10,7 +10,7 @@ import {
     InputAdornment,
 } from '@mui/material';
 import { Settings as SettingsIcon, Search as SearchIcon } from '@mui/icons-material';
-import { Quote } from '#common/types/marketplace.js';
+import { QuoteQuerySortType, QuoteResult } from '#common/types/apiTypes.js';
 import {
     StyledTableContainer,
     TableScrollWrapper,
@@ -29,25 +29,24 @@ import { TableWithMeasuredFooter } from '../../components/TableWithMeasuredFoote
 import { QuoteDetailsDialog } from './QuoteDetailsDialog';
 import { ColumnConfigDialog } from '../../components/ColumnConfig';
 import { useColumnConfig } from '../../components/useColumnConfig';
-import { defaultQuoteColumns, QuoteCellContext, QuoteQuerySortType } from './quoteColumns';
+import { defaultQuoteColumns, QuoteCellContext } from './quoteColumns';
 import { renderHeader, renderCell } from '../../components/columnRenderHelpers';
 import { ResponsiveSearchContainer } from '../../components/ResponsiveSearchContainer';
 import { SortOrder } from '../../components/SortableHeader';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
-import { quoteMatchesSearch } from './quoteSearchUtils';
-import { sortQuotes } from './quoteSortUtils';
 
-function getQuoteRowKey(globalIndex: number): string {
-    return `quote-row-${globalIndex}`;
+function getQuoteRowKey(quoteResult: QuoteResult): string {
+    return quoteResult.quote.id;
 }
 
 export const QuoteList: React.FC = () => {
-    const [quotes, setQuotes] = useState<Quote[]>([]);
+    const [quotes, setQuotes] = useState<QuoteResult[]>([]);
+    const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(25);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+    const [selectedQuote, setSelectedQuote] = useState<QuoteResult | null>(null);
     const [showColumnConfig, setShowColumnConfig] = useState(false);
     const [search, setSearch] = useSearchParamState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -71,39 +70,35 @@ export const QuoteList: React.FC = () => {
         setPage(0);
     }, [debouncedSearch]);
 
-    useEffect(() => {
-        const abortController = new AbortController();
-
-        const loadQuotes = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const response = await fetch('/api/quotes', { signal: abortController.signal });
-                const data = await response.json();
-                if (!response.ok) {
-                    setError(data.error ?? 'Failed to fetch quotes from Atlassian');
-                    setQuotes([]);
-                    return;
-                }
-                setQuotes(data.quotes ?? []);
-                setPage(0);
-            } catch (fetchError) {
-                if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
-                    return;
-                }
-                console.error('Error fetching quotes:', fetchError);
-                setError('Failed to fetch quotes from Atlassian');
+    const fetchQuotes = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/quotes?start=${page * rowsPerPage}&limit=${rowsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${encodeURIComponent(debouncedSearch)}`
+            );
+            const data = await response.json();
+            if (!response.ok) {
+                setError(data.error ?? 'Failed to fetch quotes');
                 setQuotes([]);
-            } finally {
-                if (!abortController.signal.aborted) {
-                    setLoading(false);
-                }
+                setTotal(0);
+                return;
             }
-        };
+            setQuotes(data.quotes ?? []);
+            setTotal(data.total ?? 0);
+        } catch (fetchError) {
+            console.error('Error fetching quotes:', fetchError);
+            setError('Failed to fetch quotes');
+            setQuotes([]);
+            setTotal(0);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        loadQuotes();
-        return () => abortController.abort();
-    }, []);
+    useEffect(() => {
+        fetchQuotes();
+    }, [page, rowsPerPage, sortBy, sortOrder, debouncedSearch]);
 
     const handleChangePage = (_event: unknown, newPage: number) => {
         setPage(newPage);
@@ -134,14 +129,6 @@ export const QuoteList: React.FC = () => {
         }
         setPage(0);
     };
-
-    const filteredQuotes = quotes.filter((quote) => quoteMatchesSearch(quote, debouncedSearch));
-    const sortedQuotes = sortQuotes(filteredQuotes, sortBy, sortOrder);
-
-    const paginatedQuotes = sortedQuotes.slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage
-    );
 
     const cellContext: QuoteCellContext = {};
 
@@ -209,20 +196,17 @@ export const QuoteList: React.FC = () => {
                                                         <CircularProgress />
                                                     </TableLoadingCell>
                                                 </StyledTableRow>
-                                            ) : paginatedQuotes.length > 0 ? (
-                                                paginatedQuotes.map((quote, index) => {
-                                                    const globalIndex = page * rowsPerPage + index;
-                                                    return (
-                                                        <StyledTableRow
-                                                            key={getQuoteRowKey(globalIndex)}
-                                                            onClick={() => setSelectedQuote(quote)}
-                                                        >
-                                                            {visibleColumns.map((column) =>
-                                                                renderCell(column, quote, cellContext)
-                                                            )}
-                                                        </StyledTableRow>
-                                                    );
-                                                })
+                                            ) : quotes.length > 0 ? (
+                                                quotes.map((quoteResult) => (
+                                                    <StyledTableRow
+                                                        key={getQuoteRowKey(quoteResult)}
+                                                        onClick={() => setSelectedQuote(quoteResult)}
+                                                    >
+                                                        {visibleColumns.map((column) =>
+                                                            renderCell(column, quoteResult, cellContext)
+                                                        )}
+                                                    </StyledTableRow>
+                                                ))
                                             ) : (
                                                 <StyledTableRow>
                                                     <StyledTableCell colSpan={visibleColumns.length || 1} align="center" sx={{ py: 4 }}>
@@ -241,7 +225,7 @@ export const QuoteList: React.FC = () => {
                     <PaginationWrapper>
                         <TablePagination
                             component="div"
-                            count={sortedQuotes.length}
+                            count={total}
                             page={page}
                             onPageChange={handleChangePage}
                             rowsPerPage={rowsPerPage}
@@ -253,7 +237,7 @@ export const QuoteList: React.FC = () => {
             />
 
             <QuoteDetailsDialog
-                quote={selectedQuote}
+                quoteResult={selectedQuote}
                 open={selectedQuote !== null}
                 onClose={() => setSelectedQuote(null)}
             />

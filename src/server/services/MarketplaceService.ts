@@ -1,7 +1,6 @@
 import { inject, injectable } from 'inversify';
 import axios from 'axios';
 import { Readable } from 'stream';
-import StreamArray from 'stream-json/streamers/StreamArray.js';
 import {
     InitiateAsyncLicense,
     InitiateAsyncLicenseCollection,
@@ -51,7 +50,6 @@ export class MarketplaceService {
     private username: string = '';
     private password: string = '';
     private developerId: string = '';
-    private quotesExportPromise: Promise<v3Components['schemas']['Quote'][]> | null = null;
 
     constructor(
         @inject(TYPES.ConfigDao) private readonly configDao: ConfigDao
@@ -184,22 +182,6 @@ export class MarketplaceService {
         return response.data as Readable;
     }
 
-    private async collectStreamArray<T>(stream: Readable): Promise<T[]> {
-        const items: T[] = [];
-        const parserStream = StreamArray.withParser();
-        stream.pipe(parserStream as NodeJS.WritableStream);
-
-        try {
-            for await (const data of parserStream as AsyncIterable<{ value: T }>) {
-                items.push(data.value);
-            }
-        } finally {
-            stream.destroy();
-        }
-
-        return items;
-    }
-
     /**
      * Start transaction export and return a stream of the JSON array. Caller must consume and destroy the stream.
      */
@@ -243,19 +225,13 @@ export class MarketplaceService {
     }
 
     /**
-     * Start quotes export and return all quotes from the JSON array.
-     * Concurrent callers share a single in-flight export.
+     * Start quotes export and return a stream of the JSON array. Caller must consume and destroy the stream.
      */
-    async getQuotes(): Promise<v3Components['schemas']['Quote'][]> {
-        if (!this.quotesExportPromise) {
-            this.quotesExportPromise = this.fetchQuotesFromAtlassian().finally(() => {
-                this.quotesExportPromise = null;
-            });
-        }
-        return this.quotesExportPromise;
+    async getQuotesStream(): Promise<Readable> {
+        return this.initiateQuotesExportStream();
     }
 
-    private async fetchQuotesFromAtlassian(): Promise<v3Components['schemas']['Quote'][]> {
+    private async initiateQuotesExportStream(): Promise<Readable> {
         await this.initializeConfig();
         const today = new Date().toISOString().split('T')[0];
         const exportUrl = this.buildUrlWithParams(
@@ -286,10 +262,7 @@ export class MarketplaceService {
         );
 
         console.log(`Streaming quotes from API`);
-        const stream = await this.getStreamForResultUrl(resultUrl);
-        const quotes = await this.collectStreamArray<v3Components['schemas']['Quote']>(stream);
-        console.log(`Quotes found: ${quotes.length}`);
-        return quotes;
+        return this.getStreamForResultUrl(resultUrl);
     }
 
     async getQuoteDetails(params: {

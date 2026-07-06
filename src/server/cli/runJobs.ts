@@ -43,6 +43,11 @@ async function main() {
         if (flags.size === 0 || flags.has('--validate-transactions')) {
             await jobStarter.startValidationJob(startDate, true);
         }
+
+        if (flags.size === 0 || flags.has('--with-quotes')) {
+            console.log(`\n=== Fetching quotes ===`);
+            await jobStarter.startQuoteJob(true);
+        }
     } catch (e) {
         console.error('Unhandled error:', e);
         process.exit(1);

@@ -3,6 +3,7 @@ import { TYPES } from '../config/types.js';
 import { AddonJob } from './AddonJob.js';
 import { TransactionJob } from './TransactionJob.js';
 import { LicenseJob } from './LicenseJob.js';
+import { QuoteJob } from './QuoteJob.js';
 import { PricingJob } from './PricingJob.js';
 import { ValidationJob } from './ValidationJob.js';
 import { MarketplaceService } from '../services/MarketplaceService.js';
@@ -15,6 +16,7 @@ export class JobRunner {
         @inject(TYPES.AddonJob) private addonJob: AddonJob,
         @inject(TYPES.TransactionJob) private transactionJob: TransactionJob,
         @inject(TYPES.LicenseJob) private licenseJob: LicenseJob,
+        @inject(TYPES.QuoteJob) private quoteJob: QuoteJob,
         @inject(TYPES.PricingJob) private pricingJob: PricingJob,
         @inject(TYPES.ValidationJob) private validationJob: ValidationJob,
         @inject(TYPES.MarketplaceService) private marketplaceService: MarketplaceService,
@@ -95,6 +97,22 @@ export class JobRunner {
         });
     }
 
+    public startQuoteJob(runSync: boolean = false): Promise<void> {
+        const runner = this.getRunner(runSync);
+
+        return runner(JobType.QuoteJob, async () => {
+            let stream: Awaited<ReturnType<typeof this.marketplaceService.getQuotesStream>> | null = null;
+            try {
+                stream = await this.marketplaceService.getQuotesStream();
+                const onProgress = (current: number, total?: number) =>
+                    this.jobDao.updateJobProgress(JobType.QuoteJob, current, total);
+                await this.quoteJob.processQuotesFromStream(stream, onProgress);
+            } finally {
+                stream?.destroy();
+            }
+        });
+    }
+
     public startValidationJob(startDate?: string, runSync: boolean = false): Promise<void> {
         const runner = this.getRunner(runSync);
 
@@ -146,6 +164,14 @@ export class JobRunner {
                 results.push({ job: 'Validate Transactions', success: true });
             } catch (e: any) {
                 results.push({ job: 'Validate Transactions', success: false, error: e?.message || String(e) });
+                return results;
+            }
+            // 6. Fetch Quotes
+            try {
+                await this.startQuoteJob(true);
+                results.push({ job: 'Fetch Quotes', success: true });
+            } catch (e: any) {
+                results.push({ job: 'Fetch Quotes', success: false, error: e?.message || String(e) });
                 return results;
             }
             return results;

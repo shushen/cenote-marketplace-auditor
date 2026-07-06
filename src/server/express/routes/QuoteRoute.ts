@@ -1,84 +1,60 @@
 import { Router, Request, Response } from 'express';
 import { injectable, inject } from 'inversify';
 import { TYPES } from '../../config/types.js';
-import { MarketplaceService } from '../../services/MarketplaceService.js';
-import { MarketplaceApiError } from '../../services/MarketplaceApiError.js';
+import { QuoteDao } from '../../database/dao/QuoteDao.js';
+import { QuoteQueryParams, QuoteQueryResult, QuoteQuerySortType } from '#common/types/apiTypes.js';
 
 @injectable()
 export class QuoteRoute {
     public router: Router;
 
     constructor(
-        @inject(TYPES.MarketplaceService) private marketplaceService: MarketplaceService
+        @inject(TYPES.QuoteDao) private quoteDao: QuoteDao
     ) {
         this.router = Router();
         this.initializeRoutes();
     }
 
     private initializeRoutes() {
-        this.router.get('/details', this.getQuoteDetails.bind(this));
         this.router.get('/', this.getQuotes.bind(this));
     }
 
-    private async getQuoteDetails(req: Request, res: Response) {
+    private async getQuotes(req: Request, res: Response) {
         try {
-            const quoteNumber = req.query.quoteNumber as string | undefined;
-            const entitlementNumber = req.query.entitlementNumber as string | undefined;
+            const params: QuoteQueryParams = {
+                start: parseInt(req.query.start as string) || 0,
+                limit: parseInt(req.query.limit as string) || 25,
+                sortBy: (req.query.sortBy as QuoteQuerySortType) || QuoteQuerySortType.CreatedDate,
+                sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC',
+                search: req.query.search as string,
+            };
 
-            if (!quoteNumber?.trim()) {
-                res.status(400).json({ error: 'quoteNumber is required' });
+            if (params.start! < 0) {
+                res.status(400).json({ error: 'start must be non-negative' });
+                return;
+            }
+            if (params.limit! < 1 || params.limit! > 100) {
+                res.status(400).json({ error: 'limit must be between 1 and 100' });
                 return;
             }
 
-            const details = await this.marketplaceService.getQuoteDetails({
-                quoteNumber: quoteNumber.trim(),
-                entitlementNumber: entitlementNumber?.trim() || undefined,
-            });
-            res.json(details);
-        } catch (error) {
-            if (error instanceof MarketplaceApiError) {
-                const status = mapMarketplaceErrorToHttpStatus(error.statusCode);
-                console.error('Atlassian Marketplace API error:', error.message);
-                res.status(status).json({
-                    error: error.message,
-                    upstreamStatus: error.statusCode
+            if (!Object.values(QuoteQuerySortType).includes(params.sortBy as QuoteQuerySortType)) {
+                res.status(400).json({
+                    error: `sortBy must be one of: ${Object.values(QuoteQuerySortType).join(', ')}`,
                 });
                 return;
             }
-            console.error('Error fetching quote details from Atlassian:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    }
 
-    private async getQuotes(_req: Request, res: Response) {
-        try {
-            const quotes = await this.marketplaceService.getQuotes();
-            res.json({ quotes });
-        } catch (error) {
-            if (error instanceof MarketplaceApiError) {
-                const status = mapMarketplaceErrorToHttpStatus(error.statusCode);
-                console.error('Atlassian Marketplace API error:', error.message);
-                res.status(status).json({
-                    error: error.message,
-                    upstreamStatus: error.statusCode
-                });
+            if (params.sortOrder !== 'ASC' && params.sortOrder !== 'DESC') {
+                res.status(400).json({ error: 'sortOrder must be either ASC or DESC' });
                 return;
             }
-            console.error('Error fetching quotes from Atlassian:', error);
+
+            const result: QuoteQueryResult = await this.quoteDao.getQuotes(params);
+            res.json(result);
+        } catch (error) {
+            console.error('Error fetching quotes:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
-}
-
-function mapMarketplaceErrorToHttpStatus(upstreamStatus: number): number {
-    if (upstreamStatus === 404) {
-        return 404;
-    }
-    if (upstreamStatus === 400) {
-        return 400;
-    }
-    if (upstreamStatus >= 500) {
-        return 502;
-    }
-    return 500;
 }
