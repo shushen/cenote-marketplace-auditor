@@ -3,6 +3,7 @@ import {
     normalizeQuoteAggregateData,
     normalizeQuoteDetailsData,
     normalizeQuoteScheduleData,
+    quoteLinesEqual,
 } from '../quoteAggregateUtils.js';
 
 describe('quoteAggregateUtils', () => {
@@ -114,6 +115,35 @@ describe('quoteAggregateUtils', () => {
             expect(normalized.quoteNumber).toBe('QT-123');
             expect(normalized.createdBy).toBe('CUSTOMER_ADVOCATE');
             expect(normalized.quotesLines).toHaveLength(1);
+        });
+    });
+
+    describe('quoteLinesEqual', () => {
+        const baseLine = {
+            productName: 'Test App',
+            schedules: [{
+                startDate: '2025-05-23',
+                endDate: '2025-12-12',
+                userTier: 2500,
+                listPrice: 5168.46,
+            }],
+        };
+
+        it('returns true when line data matches after normalization', () => {
+            expect(quoteLinesEqual(
+                [{ ...baseLine, schedules: [{ ...baseLine.schedules[0], discounts: [] }] }],
+                [baseLine]
+            )).toBe(true);
+        });
+
+        it('returns false when schedule data changes', () => {
+            expect(quoteLinesEqual(
+                [baseLine],
+                [{
+                    ...baseLine,
+                    schedules: [{ ...baseLine.schedules[0], listPrice: 9999 }],
+                }]
+            )).toBe(false);
         });
     });
 });

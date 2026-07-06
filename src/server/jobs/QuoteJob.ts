@@ -10,6 +10,7 @@ import {
     getQuoteNumberFromRow,
     normalizeQuoteAggregateData,
     normalizeQuoteDetailsData,
+    quoteLinesEqual,
 } from '#common/util/quoteAggregateUtils.js';
 import { TYPES } from '../config/types.js';
 import { inject, injectable } from 'inversify';
@@ -128,14 +129,20 @@ export class QuoteJob {
         const { quoteNumber, rows } = group;
         const quoteData = buildQuoteAggregateData(rows);
 
+        const existingQuote = await this.quoteDao.getQuoteForQuoteNumber(quoteNumber);
         let detailsData: QuoteDetailsData;
-        try {
-            detailsData = await this.marketplaceService.getQuoteDetails({
-                quoteNumber,
-            });
-        } catch (error) {
-            console.error(`Failed to fetch details for quote ${quoteNumber}:`, error);
-            throw error;
+
+        if (existingQuote && quoteLinesEqual(quoteData.lines, existingQuote.data.lines)) {
+            detailsData = existingQuote.details;
+        } else {
+            try {
+                detailsData = await this.marketplaceService.getQuoteDetails({
+                    quoteNumber,
+                });
+            } catch (error) {
+                console.error(`Failed to fetch details for quote ${quoteNumber}:`, error);
+                throw error;
+            }
         }
 
         return this.processOneQuote(quoteNumber, quoteData, detailsData);

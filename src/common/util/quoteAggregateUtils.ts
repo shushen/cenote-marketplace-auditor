@@ -1,5 +1,5 @@
 import { QuoteAggregateData, QuoteData, QuoteDetailsData, QuoteLineAggregate, QuoteScheduleData } from '#common/types/marketplace.js';
-import { normalizeObject } from '#common/util/objectUtils.js';
+import { deepEqual, normalizeObject } from '#common/util/objectUtils.js';
 
 type QuoteDetailsLine = NonNullable<QuoteDetailsData['quotesLines']>[number];
 
@@ -128,6 +128,23 @@ export function normalizeQuoteScheduleData(schedule: QuoteScheduleData): QuoteSc
     return normalized;
 }
 
+export function normalizeQuoteLines(lines: QuoteLineAggregate[]): QuoteLineAggregate[] {
+    return lines.map(line => ({
+        ...normalizeQuoteLineFields(line),
+        schedules: line.schedules.map(normalizeQuoteScheduleData),
+    }));
+}
+
+export function quoteLinesEqual(
+    incomingLines: QuoteLineAggregate[],
+    existingLines: QuoteLineAggregate[]
+): boolean {
+    return deepEqual(
+        normalizeObject(normalizeQuoteLines(incomingLines)),
+        normalizeObject(normalizeQuoteLines(existingLines))
+    );
+}
+
 export function normalizeQuoteAggregateData(data: QuoteAggregateData): QuoteAggregateData {
     return {
         ...normalizeQuoteLevelFields({
@@ -137,10 +154,7 @@ export function normalizeQuoteAggregateData(data: QuoteAggregateData): QuoteAggr
             acceptedDate: data.acceptedDate,
             quoteExpiryDate: data.quoteExpiryDate,
         }),
-        lines: data.lines.map(line => ({
-            ...normalizeQuoteLineFields(line),
-            schedules: line.schedules.map(normalizeQuoteScheduleData),
-        })),
+        lines: normalizeQuoteLines(data.lines),
     };
 }
 
