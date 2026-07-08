@@ -1,16 +1,16 @@
 // Constants used for calcuating prices
 
 export const CLOUD_DISCOUNT_RATIO_LEGACY = 0.85;
-export const CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE = '2026-01-01';
+export const CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE = '2026-04-01';
 
-export const FORGE_RATE_2026_01_START_DATE = '2026-01-01';
-export const FORGE_RATE_2026_01 = 0.84; // 16%
-export const FORGE_RATE_2026_07_START_DATE = '2026-07-01';
-export const FORGE_RATE_2026_07 = 0.83; // 17%
+export const FORGE_RATE_2026_04_START_DATE = '2026-04-01';
+export const FORGE_RATE_2026_04 = 0.84; // 16%
+export const FORGE_RATE_2026_10_START_DATE = '2026-10-01';
+export const FORGE_RATE_2026_10 = 0.83; // 17%
 
-export const CONNECT_RATE_2026_01 = 0.80; // 20%
-export const CONNECT_RATE_2026_07_START_DATE = '2026-07-01';
-export const CONNECT_RATE_2026_07 = 0.75; // 25%
+export const CONNECT_RATE_2026_04 = 0.80; // 20%
+export const CONNECT_RATE_2026_10_START_DATE = '2026-10-01';
+export const CONNECT_RATE_2026_10 = 0.75; // 25%
 
 export const DC_DISCOUNT_RATIO = 0.75;
 export const ACADEMIC_CLOUD_PRICE_RATIO = 0.25;

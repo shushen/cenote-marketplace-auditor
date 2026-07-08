@@ -11,13 +11,13 @@ import {
     CLOUD_DISCOUNT_RATIO_LEGACY,
     COMMUNITY_CLOUD_PRICE_RATIO,
     DC_DISCOUNT_RATIO,
-    FORGE_RATE_2026_01,
-    FORGE_RATE_2026_07,
-    FORGE_RATE_2026_07_START_DATE,
+    FORGE_RATE_2026_04,
+    FORGE_RATE_2026_10,
+    FORGE_RATE_2026_10_START_DATE,
     SOCIAL_IMPACT_GLOBAL_ACCESS_CLOUD_PRICE_RATIO,
-    CONNECT_RATE_2026_01,
-    CONNECT_RATE_2026_07,
-    CONNECT_RATE_2026_07_START_DATE
+    CONNECT_RATE_2026_04,
+    CONNECT_RATE_2026_10,
+    CONNECT_RATE_2026_10_START_DATE
 } from "#server/util/validationConstants.js";
 import { injectable } from "inversify";
 import { DeploymentType, EnhancedLicenseType, HostingType } from "#common/types/marketplace.js";
@@ -57,25 +57,23 @@ export class PriceCalculatorService {
             return DC_DISCOUNT_RATIO;
         }
 
-        // Sales prior to 2026-01-01 always have the 85% rate, regardless of deployment type
+        // Sales prior to 2026-04-01 always have the 85% rate, regardless of deployment type
 
         if (saleDate < CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE) {
             return CLOUD_DISCOUNT_RATIO_LEGACY;
         }
 
-        // Forge sales after 2026-01 have either a 16% or 17% take rate
+        // Forge sales after 2026-04 have either a 16% or 17% take rate
 
         if (alwaysForge || forgeMigrationDate && forgeMigrationDate < saleDate) {
-            if (saleDate < FORGE_RATE_2026_07_START_DATE) {
-                return FORGE_RATE_2026_01;
-            }
-
-            return FORGE_RATE_2026_07
+            return (saleDate < FORGE_RATE_2026_10_START_DATE)
+                ? FORGE_RATE_2026_04
+                : FORGE_RATE_2026_10;
         }
 
         // Otherwise, it's a Connect sale with either a 20% or 25% take rate
 
-        return (saleDate < CONNECT_RATE_2026_07_START_DATE) ? CONNECT_RATE_2026_01 : CONNECT_RATE_2026_07;
+        return (saleDate < CONNECT_RATE_2026_10_START_DATE) ? CONNECT_RATE_2026_04 : CONNECT_RATE_2026_10;
     }
 
     public calculateExpectedPrice(opts: PriceCalcOpts): PriceResult {
