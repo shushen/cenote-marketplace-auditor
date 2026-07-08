@@ -580,7 +580,7 @@ export class SlackService {
         const entitlementUrl = `${baseUrl}/transactions?search=${encodeURIComponent(transaction.entitlementId)}`;
         const entitlementIdText = encodeSlackText(getTransactionDisplayId(transaction.data));
 
-        const message = encodeSlackText(`⚠️ Transaction Exception - ${addonName}  - ${sanitizedCompany} (${formatCurrency(vendorDifference)})`);
+        const message = encodeSlackText(`⚠️ Transaction Exception - ${addonName}  - ${sanitizedCompany} (Difference: ${formatCurrency(vendorDifference)})`);
 
         // Note: This function is called per exception (not batched), so it should never exceed 50 blocks.
         // Current block count: header (1) + divider (1) + section (1) + section with fields (1) +

@@ -7,10 +7,17 @@ import {
     ACADEMIC_DC_PRICE_RATIO_CURRENT_OTHER,
     ACADEMIC_DC_PRICE_RATIO_CURRENT_START_DATE,
     ACADEMIC_DC_PRICE_RATIO_LEGACY,
-    CLOUD_DISCOUNT_RATIO,
+    CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE,
+    CLOUD_DISCOUNT_RATIO_LEGACY,
     COMMUNITY_CLOUD_PRICE_RATIO,
     DC_DISCOUNT_RATIO,
-    SOCIAL_IMPACT_GLOBAL_ACCESS_CLOUD_PRICE_RATIO
+    FORGE_RATE_2026_01,
+    FORGE_RATE_2026_07,
+    FORGE_RATE_2026_07_START_DATE,
+    SOCIAL_IMPACT_GLOBAL_ACCESS_CLOUD_PRICE_RATIO,
+    CONNECT_RATE_2026_01,
+    CONNECT_RATE_2026_07,
+    CONNECT_RATE_2026_07_START_DATE
 } from "#server/util/validationConstants.js";
 import { injectable } from "inversify";
 import { DeploymentType, EnhancedLicenseType, HostingType } from "#common/types/marketplace.js";
@@ -25,9 +32,6 @@ const ANNUAL_DISCOUNT_MULTIPLIER = 10; // 12 months for the price of 10 months
 
 /** Days in billing month used for MQB proration (vendor convention) */
 const MQB_BILLING_MONTH_DAYS = 31;
-const CLOUD_DISCOUNT_RATIO_CHANGE_DATE = '2026-04-01';
-const CLOUD_DISCOUNT_RATIO_FOR_NON_FORGE = 0.8;
-
 
 /** Result of the core pricing step (MQB or regular) before refund/academic/discounts/finalization. */
 interface CorePriceResult {
@@ -47,23 +51,31 @@ export class PriceCalculatorService {
     }): number {
         const { saleDate, deploymentType, forgeMigrationDate, alwaysForge } = opts;
 
+        // DC always has the same rate
+
         if (deploymentType !== 'cloud') {
             return DC_DISCOUNT_RATIO;
         }
 
-        if (saleDate < CLOUD_DISCOUNT_RATIO_CHANGE_DATE) {
-            return CLOUD_DISCOUNT_RATIO;
+        // Sales prior to 2026-01-01 always have the 85% rate, regardless of deployment type
+
+        if (saleDate < CLOUD_DISCOUNT_RATIO_LEGACY_END_DATE) {
+            return CLOUD_DISCOUNT_RATIO_LEGACY;
         }
 
-        if (alwaysForge) {
-            return CLOUD_DISCOUNT_RATIO;
+        // Forge sales after 2026-01 have either a 16% or 17% take rate
+
+        if (alwaysForge || forgeMigrationDate && forgeMigrationDate < saleDate) {
+            if (saleDate < FORGE_RATE_2026_07_START_DATE) {
+                return FORGE_RATE_2026_01;
+            }
+
+            return FORGE_RATE_2026_07
         }
 
-        if (forgeMigrationDate && forgeMigrationDate < saleDate) {
-            return CLOUD_DISCOUNT_RATIO;
-        }
+        // Otherwise, it's a Connect sale with either a 20% or 25% take rate
 
-        return CLOUD_DISCOUNT_RATIO_FOR_NON_FORGE;
+        return (saleDate < CONNECT_RATE_2026_07_START_DATE) ? CONNECT_RATE_2026_01 : CONNECT_RATE_2026_07;
     }
 
     public calculateExpectedPrice(opts: PriceCalcOpts): PriceResult {
