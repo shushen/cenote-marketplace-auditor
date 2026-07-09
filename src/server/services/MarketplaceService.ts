@@ -377,6 +377,7 @@ export class MarketplaceService {
         // First, find out if this product is opted out of expert discounts
 
         const expertDiscountOptOutUrl = this.buildUrlWithParams(`${this.commerceBaseUrlV1}/product-ignore-rule/${productId}/promotion-type/partner`, {});
+        console.log(`Calling Marketplace API: ${expertDiscountOptOutUrl}`);
 
         const expertDiscountOptOutResponse = await this.httpClient.get<commerceComponents["schemas"]["Promos_PublicProductIgnoreRuleResponse"]>(
             expertDiscountOptOutUrl,
