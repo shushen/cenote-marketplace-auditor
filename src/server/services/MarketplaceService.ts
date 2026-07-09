@@ -46,6 +46,7 @@ export class MarketplaceService {
     private readonly baseUrl = 'https://marketplace.atlassian.com';
     private readonly baseUrlV3 = 'https://api.atlassian.com/marketplace/rest/3';
     private readonly commerceBaseUrl = 'https://api.atlassian.com/commerce/api/v2';
+    private readonly commerceBaseUrlV1 = 'https://api.atlassian.com/commerce/api/v1';
     private username: string = '';
     private password: string = '';
     private developerId: string = '';
@@ -373,6 +374,22 @@ export class MarketplaceService {
 
         await this.initializeConfig();
 
+        // First, find out if this product is opted out of expert discounts
+
+        const expertDiscountOptOutUrl = this.buildUrlWithParams(`${this.commerceBaseUrlV1}/product-ignore-rule/${productId}/promotion-type/partner`, {});
+
+        const expertDiscountOptOutResponse = await this.httpClient.get<commerceComponents["schemas"]["Promos_PublicProductIgnoreRuleResponse"]>(
+            expertDiscountOptOutUrl,
+            {
+                headers: await this.getRequestHeaders(),
+                context: `Fetch expert discount opt out for product ${productId}`,
+            }
+        );
+
+        const expertDiscountOptOut = expertDiscountOptOutResponse.ignored ?? false;
+
+        // Next, fetch the offerings for this product
+
         const offeringsUrl = this.buildUrlWithParams(`${this.commerceBaseUrl}/products/${productId}/offerings`, {
             status: liveOrPending === 'live' ? 'ACTIVE' : 'DRAFT',
             'hosting-type': this.mapCloudOrServerToHostingType(cloudOrServer)
@@ -388,6 +405,8 @@ export class MarketplaceService {
         );
 
         let newResult : OurPricingData|undefined = undefined;
+
+        // Iterate through all offerings
 
         for (const offering of offeringsResponse.values) {
             const { id } = offering;
@@ -433,7 +452,7 @@ export class MarketplaceService {
                 const cycleType = commercialPricingPlan.items[0].cycle.name;
                 if (cloudOrServer !== 'cloud' &&cycleType==='ANNUAL') {
                     newResult = {
-                        expertDiscountOptOut: true, // TODO FIXME FIGURE OUT HOW TO SET THIS PROPERLY WITH V.3 API
+                        expertDiscountOptOut,
                         items: tiers
                             .map(tier => ({
                                 monthsValid: 12,
@@ -446,7 +465,7 @@ export class MarketplaceService {
                     }
                 } else if (cloudOrServer === 'cloud' &&cycleType==='MONTHLY') {
                     newResult = {
-                        expertDiscountOptOut: true, // TODO FIXME FIGURE OUT HOW TO SET THIS PROPERLY WITH V.3 API
+                        expertDiscountOptOut,
                         items: tiers
                             .filter(tier => tier.ceiling !== tier.floor) // strip out the weird floor=11, ceiling=11
                             .map(tier => ({
