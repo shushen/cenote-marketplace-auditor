@@ -13,6 +13,7 @@ module.exports = {
     },
     testRegex: '(/__tests__/.*\\.test\\.(ts|js)x?)$',
     moduleNameMapper: {
+        '^uuid$': '<rootDir>/jest/uuid.cjs',
         '^(\\.{1,2}/.*)\\.js$': '$1',
         '^#common/(.*)\\.js$': '<rootDir>/src/common/$1',
         '^#server/(.*)\\.js$': '<rootDir>/src/server/$1',
