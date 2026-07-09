@@ -2,6 +2,7 @@ import { deepEqual, normalizeObject } from '../objectUtils.js';
 import {
     normalizeQuoteAggregateData,
     normalizeQuoteDetailsData,
+    normalizeQuoteLines,
     normalizeQuoteScheduleData,
     quoteLinesEqual,
 } from '../quoteAggregateUtils.js';
@@ -144,6 +145,63 @@ describe('quoteAggregateUtils', () => {
                     schedules: [{ ...baseLine.schedules[0], listPrice: 9999 }],
                 }]
             )).toBe(false);
+        });
+
+        it('returns true when line order differs', () => {
+            const lineA = {
+                entitlementNumber: 'E-AAA',
+                productName: 'App A',
+                schedules: [{ startDate: '2025-01-01', endDate: '2026-01-01', listPrice: 100 }],
+            };
+            const lineB = {
+                entitlementNumber: 'E-BBB',
+                productName: 'App B',
+                schedules: [{ startDate: '2025-02-01', endDate: '2026-02-01', listPrice: 200 }],
+            };
+
+            expect(quoteLinesEqual([lineA, lineB], [lineB, lineA])).toBe(true);
+        });
+
+        it('returns true when schedule order differs', () => {
+            const line = {
+                entitlementNumber: 'E-AAA',
+                schedules: [
+                    { startDate: '2025-06-01', endDate: '2026-06-01', listPrice: 200 },
+                    { startDate: '2025-01-01', endDate: '2026-01-01', listPrice: 100 },
+                ],
+            };
+
+            expect(quoteLinesEqual(
+                [line],
+                [{
+                    ...line,
+                    schedules: [...line.schedules].reverse(),
+                }]
+            )).toBe(true);
+        });
+    });
+
+    describe('normalizeQuoteLines', () => {
+        it('sorts lines by entitlement number and schedules by start date', () => {
+            const normalized = normalizeQuoteLines([
+                {
+                    entitlementNumber: 'E-BBB',
+                    schedules: [
+                        { startDate: '2025-06-01', endDate: '2026-06-01', listPrice: 200 },
+                        { startDate: '2025-01-01', endDate: '2026-01-01', listPrice: 100 },
+                    ],
+                },
+                {
+                    entitlementNumber: 'E-AAA',
+                    schedules: [{ startDate: '2025-03-01', endDate: '2026-03-01', listPrice: 50 }],
+                },
+            ]);
+
+            expect(normalized.map(line => line.entitlementNumber)).toEqual(['E-AAA', 'E-BBB']);
+            expect(normalized[1].schedules.map(schedule => schedule.startDate)).toEqual([
+                '2025-01-01',
+                '2025-06-01',
+            ]);
         });
     });
 });

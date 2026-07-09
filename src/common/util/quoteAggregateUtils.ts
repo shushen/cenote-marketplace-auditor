@@ -128,11 +128,35 @@ export function normalizeQuoteScheduleData(schedule: QuoteScheduleData): QuoteSc
     return normalized;
 }
 
-export function normalizeQuoteLines(lines: QuoteLineAggregate[]): QuoteLineAggregate[] {
-    return lines.map(line => ({
+export function normalizeQuoteLine(line: QuoteLineAggregate | QuoteDetailsLine): QuoteLineAggregate {
+    return {
         ...normalizeQuoteLineFields(line),
-        schedules: line.schedules.map(normalizeQuoteScheduleData),
-    }));
+        schedules: sortSchedules((line.schedules ?? []).map(normalizeQuoteScheduleData)),
+    };
+}
+
+export function sortQuoteLines(lines: QuoteLineAggregate[]): QuoteLineAggregate[] {
+    return [...lines].sort((a, b) => {
+        const entitlementA = a.entitlementNumber ?? '';
+        const entitlementB = b.entitlementNumber ?? '';
+        if (entitlementA !== entitlementB) {
+            return entitlementA.localeCompare(entitlementB);
+        }
+
+        const entitlementEidA = a.entitlementEid ?? '';
+        const entitlementEidB = b.entitlementEid ?? '';
+        if (entitlementEidA !== entitlementEidB) {
+            return entitlementEidA.localeCompare(entitlementEidB);
+        }
+
+        const productNameA = a.productName ?? '';
+        const productNameB = b.productName ?? '';
+        return productNameA.localeCompare(productNameB);
+    });
+}
+
+export function normalizeQuoteLines(lines: QuoteLineAggregate[]): QuoteLineAggregate[] {
+    return sortQuoteLines(lines.map(normalizeQuoteLine));
 }
 
 export function quoteLinesEqual(
@@ -164,10 +188,12 @@ export function normalizeQuoteDetailsData(details: QuoteDetailsData): QuoteDetai
     };
 
     if (details.quotesLines?.length) {
-        normalized.quotesLines = details.quotesLines.map(line => ({
-            ...normalizeQuoteLineFields(line),
-            schedules: sortSchedules((line.schedules ?? []).map(normalizeQuoteScheduleData)),
-        }));
+        normalized.quotesLines = normalizeQuoteLines(
+            details.quotesLines.map(line => ({
+                ...line,
+                schedules: line.schedules ?? [],
+            }))
+        );
     }
 
     return normalized;
