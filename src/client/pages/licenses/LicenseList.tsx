@@ -14,11 +14,11 @@ import {
     Checkbox,
     ListItemText,
     Button,
+    Typography,
 } from '@mui/material';
 import { Search as SearchIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import { LicenseQuerySortType, LicenseResult, AppInfo } from '#common/types/apiTypes.js';
-import { StyledTableContainer, TableScrollWrapper, TableWrapper, LoadingOverlay, TableContainer, StyledTable, StyledTableHead, StyledTableBody, PaginationWrapper } from '../../components/styles';
-import { TableWithMeasuredFooter } from '../../components/TableWithMeasuredFooter';
+import { LoadingOverlay, StyledTable, StyledTableHead, StyledTableBody, ListPageRoot, ListTableScrollZone, ListControlsScrollLayer, ListTitleBar, ListPaginationBar } from '../../components/styles';
 import { LicenseDetailsDialog } from './LicenseDetailsDialog';
 import { SortOrder } from '../../components/SortableHeader';
 import { StyledTableRow, StyledListPaper, StyledTableCell } from '../../components/styles';
@@ -170,209 +170,206 @@ export const LicenseList: React.FC<LicenseListProps> = () => {
     const cellContext: LicenseCellContext = {};
 
     return (
-        <TableContainer>
-            <ResponsiveSearchContainer sx={{ mb: 0 }}>
-                <TextField
-                    className="search-field"
-                    label=""
-                    variant="outlined"
-                    value={search}
-                    onChange={handleSearchChange}
-                    onKeyPress={handleKeyPress}
-                    size="small"
-                    placeholder="Search"
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <CollapsibleFilters label={<span className="filter-label">Filters:</span>}>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>License Type</InputLabel>
-                        <Select
-                            multiple
-                            value={licenseTypeFilter}
-                            label="License Type"
-                            onChange={handleLicenseTypeFilterChange}
-                            input={<OutlinedInput label="License Type" />}
-                            renderValue={(selected) => {
-                                if ((selected as string[]).length === 0) {
-                                    return 'All License Types';
-                                }
-                                return `${(selected as string[]).length} selected`;
+        <ListPageRoot>
+            <ListTableScrollZone>
+                <ListControlsScrollLayer>
+                    <ListTitleBar>
+                        <Typography variant="h4" component="h1">
+                            Licenses
+                        </Typography>
+                    </ListTitleBar>
+                    <ResponsiveSearchContainer sx={{ mb: 0 }}>
+                        <TextField
+                            className="search-field"
+                            label=""
+                            variant="outlined"
+                            value={search}
+                            onChange={handleSearchChange}
+                            onKeyPress={handleKeyPress}
+                            size="small"
+                            placeholder="Search"
+                            spellCheck={false}
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
                             }}
-                        >
-                            <MenuItem value="ACADEMIC">
-                                <Checkbox checked={licenseTypeFilter.indexOf('ACADEMIC') > -1} />
-                                <ListItemText primary="Academic" />
-                            </MenuItem>
-                            <MenuItem value="CLASSROOM">
-                                <Checkbox checked={licenseTypeFilter.indexOf('CLASSROOM') > -1} />
-                                <ListItemText primary="Classroom" />
-                            </MenuItem>
-                            <MenuItem value="COMMERCIAL">
-                                <Checkbox checked={licenseTypeFilter.indexOf('COMMERCIAL') > -1} />
-                                <ListItemText primary="Commercial" />
-                            </MenuItem>
-                            <MenuItem value="DEMONSTRATION">
-                                <Checkbox checked={licenseTypeFilter.indexOf('DEMONSTRATION') > -1} />
-                                <ListItemText primary="Demonstration" />
-                            </MenuItem>
-                            <MenuItem value="EVALUATION">
-                                <Checkbox checked={licenseTypeFilter.indexOf('EVALUATION') > -1} />
-                                <ListItemText primary="Evaluation" />
-                            </MenuItem>
-                            <MenuItem value="FOUNDATION_FREE">
-                                <Checkbox checked={licenseTypeFilter.indexOf('FOUNDATION_FREE') > -1} />
-                                <ListItemText primary="Foundation-Free" />
-                            </MenuItem>
-                            <MenuItem value="FREE">
-                                <Checkbox checked={licenseTypeFilter.indexOf('FREE') > -1} />
-                                <ListItemText primary="Free" />
-                            </MenuItem>
-                            <MenuItem value="NON_COMMERCIAL">
-                                <Checkbox checked={licenseTypeFilter.indexOf('NON_COMMERCIAL') > -1} />
-                                <ListItemText primary="Non-Commercial" />
-                            </MenuItem>
-                            <MenuItem value="OPEN_SOURCE">
-                                <Checkbox checked={licenseTypeFilter.indexOf('OPEN_SOURCE') > -1} />
-                                <ListItemText primary="Open Source" />
-                            </MenuItem>
-                            <MenuItem value="PERSONAL">
-                                <Checkbox checked={licenseTypeFilter.indexOf('PERSONAL') > -1} />
-                                <ListItemText primary="Personal" />
-                            </MenuItem>
-                            <MenuItem value="SOCIAL_IMPACT">
-                                <Checkbox checked={licenseTypeFilter.indexOf('SOCIAL_IMPACT') > -1} />
-                                <ListItemText primary="Social Impact" />
-                            </MenuItem>
-                            <MenuItem value="SOCIAL_IMPACT_GLOBAL_ACCESS">
-                                <Checkbox checked={licenseTypeFilter.indexOf('SOCIAL_IMPACT_GLOBAL_ACCESS') > -1} />
-                                <ListItemText primary="Social Impact Global Access" />
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                            value={statusFilter}
-                            label="Status"
-                            onChange={handleStatusFilterChange}
-                        >
-                            <MenuItem value="">All Statuses</MenuItem>
-                            <MenuItem value="active">Active</MenuItem>
-                            <MenuItem value="inactive">Inactive</MenuItem>
-                            <MenuItem value="cancelled">Cancelled</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>Hosting</InputLabel>
-                        <Select
-                            value={hostingFilter}
-                            label="Hosting"
-                            onChange={handleHostingFilterChange}
-                        >
-                            <MenuItem value="">All Hosting</MenuItem>
-                            <MenuItem value="Cloud">Cloud</MenuItem>
-                            <MenuItem value="Data Center">Data Center</MenuItem>
-                            <MenuItem value="Server">Server</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>App</InputLabel>
-                        <Select
-                            value={appFilter}
-                            label="App"
-                            onChange={handleAppFilterChange}
-                        >
-                            <MenuItem value="">All Apps</MenuItem>
-                            {apps.map((app) => (
-                                <MenuItem key={app.addonKey} value={app.addonKey}>
-                                    {app.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </CollapsibleFilters>
-                <Button
-                    className="columns-button"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<SettingsIcon />}
-                    onClick={() => setShowColumnConfig(true)}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Columns
-                </Button>
-            </ResponsiveSearchContainer>
-
-            <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
-
-            <TableWithMeasuredFooter
-                table={
-                    <TableScrollWrapper>
-                        <TableWrapper>
-                            <StyledTableContainer>
-                                <StyledListPaper>
-                                    {loading && (
-                                        <LoadingOverlay>
-                                            <CircularProgress />
-                                        </LoadingOverlay>
-                                    )}
-                                    <StyledTable>
-                                        <StyledTableHead>
-                                            <TableRow>
-                                                {visibleColumns.map((column) =>
-                                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
-                                                )}
-                                            </TableRow>
-                                        </StyledTableHead>
-                                        <StyledTableBody>
-                                            {licenses && licenses.length > 0 ? (
-                                                licenses.map((license) => (
-                                                    <StyledTableRow
-                                                        key={`${license.license.id}`}
-                                                        onClick={() => setSelectedLicense(license)}
-                                                    >
-                                                        {visibleColumns.map((column) =>
-                                                            renderCell(column, license, cellContext)
-                                                        )}
-                                                    </StyledTableRow>
-                                                ))
-                                            ) : !loading && (
-                                                <StyledTableRow>
-                                                    <StyledTableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
-                                                        No licenses found.
-                                                    </StyledTableCell>
-                                                </StyledTableRow>
-                                            )}
-                                        </StyledTableBody>
-                                    </StyledTable>
-                                </StyledListPaper>
-                            </StyledTableContainer>
-                        </TableWrapper>
-                    </TableScrollWrapper>
-                }
-                footer={
-                    <PaginationWrapper>
-                        <TablePagination
-                            component="div"
-                            count={total}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
-                            rowsPerPageOptions={[10, 25, 50, 100]}
                         />
-                    </PaginationWrapper>
-                }
-            />
+                        <CollapsibleFilters label={<span className="filter-label">Filters:</span>}>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>License Type</InputLabel>
+                                <Select
+                                    multiple
+                                    value={licenseTypeFilter}
+                                    label="License Type"
+                                    onChange={handleLicenseTypeFilterChange}
+                                    input={<OutlinedInput label="License Type" />}
+                                    renderValue={(selected) => {
+                                        if ((selected as string[]).length === 0) {
+                                            return 'All License Types';
+                                        }
+                                        return `${(selected as string[]).length} selected`;
+                                    }}
+                                >
+                                    <MenuItem value="ACADEMIC">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('ACADEMIC') > -1} />
+                                        <ListItemText primary="Academic" />
+                                    </MenuItem>
+                                    <MenuItem value="CLASSROOM">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('CLASSROOM') > -1} />
+                                        <ListItemText primary="Classroom" />
+                                    </MenuItem>
+                                    <MenuItem value="COMMERCIAL">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('COMMERCIAL') > -1} />
+                                        <ListItemText primary="Commercial" />
+                                    </MenuItem>
+                                    <MenuItem value="DEMONSTRATION">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('DEMONSTRATION') > -1} />
+                                        <ListItemText primary="Demonstration" />
+                                    </MenuItem>
+                                    <MenuItem value="EVALUATION">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('EVALUATION') > -1} />
+                                        <ListItemText primary="Evaluation" />
+                                    </MenuItem>
+                                    <MenuItem value="FOUNDATION_FREE">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('FOUNDATION_FREE') > -1} />
+                                        <ListItemText primary="Foundation-Free" />
+                                    </MenuItem>
+                                    <MenuItem value="FREE">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('FREE') > -1} />
+                                        <ListItemText primary="Free" />
+                                    </MenuItem>
+                                    <MenuItem value="NON_COMMERCIAL">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('NON_COMMERCIAL') > -1} />
+                                        <ListItemText primary="Non-Commercial" />
+                                    </MenuItem>
+                                    <MenuItem value="OPEN_SOURCE">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('OPEN_SOURCE') > -1} />
+                                        <ListItemText primary="Open Source" />
+                                    </MenuItem>
+                                    <MenuItem value="PERSONAL">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('PERSONAL') > -1} />
+                                        <ListItemText primary="Personal" />
+                                    </MenuItem>
+                                    <MenuItem value="SOCIAL_IMPACT">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('SOCIAL_IMPACT') > -1} />
+                                        <ListItemText primary="Social Impact" />
+                                    </MenuItem>
+                                    <MenuItem value="SOCIAL_IMPACT_GLOBAL_ACCESS">
+                                        <Checkbox checked={licenseTypeFilter.indexOf('SOCIAL_IMPACT_GLOBAL_ACCESS') > -1} />
+                                        <ListItemText primary="Social Impact Global Access" />
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>Status</InputLabel>
+                                <Select
+                                    value={statusFilter}
+                                    label="Status"
+                                    onChange={handleStatusFilterChange}
+                                >
+                                    <MenuItem value="">All Statuses</MenuItem>
+                                    <MenuItem value="active">Active</MenuItem>
+                                    <MenuItem value="inactive">Inactive</MenuItem>
+                                    <MenuItem value="cancelled">Cancelled</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>Hosting</InputLabel>
+                                <Select
+                                    value={hostingFilter}
+                                    label="Hosting"
+                                    onChange={handleHostingFilterChange}
+                                >
+                                    <MenuItem value="">All Hosting</MenuItem>
+                                    <MenuItem value="Cloud">Cloud</MenuItem>
+                                    <MenuItem value="Data Center">Data Center</MenuItem>
+                                    <MenuItem value="Server">Server</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>App</InputLabel>
+                                <Select
+                                    value={appFilter}
+                                    label="App"
+                                    onChange={handleAppFilterChange}
+                                >
+                                    <MenuItem value="">All Apps</MenuItem>
+                                    {apps.map((app) => (
+                                        <MenuItem key={app.addonKey} value={app.addonKey}>
+                                            {app.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </CollapsibleFilters>
+                        <Button
+                            className="columns-button"
+                            variant="outlined"
+                            size="small"
+                            startIcon={<SettingsIcon />}
+                            onClick={() => setShowColumnConfig(true)}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            Columns
+                        </Button>
+                    </ResponsiveSearchContainer>
+                    <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
+                </ListControlsScrollLayer>
+
+                <StyledListPaper>
+                    {loading && (
+                        <LoadingOverlay>
+                            <CircularProgress />
+                        </LoadingOverlay>
+                    )}
+                    <StyledTable>
+                        <StyledTableHead>
+                            <TableRow>
+                                {visibleColumns.map((column) =>
+                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
+                                )}
+                            </TableRow>
+                        </StyledTableHead>
+                        <StyledTableBody>
+                            {licenses && licenses.length > 0 ? (
+                                licenses.map((license) => (
+                                    <StyledTableRow
+                                        key={`${license.license.id}`}
+                                        onClick={() => setSelectedLicense(license)}
+                                    >
+                                        {visibleColumns.map((column) =>
+                                            renderCell(column, license, cellContext)
+                                        )}
+                                    </StyledTableRow>
+                                ))
+                            ) : !loading && (
+                                <StyledTableRow>
+                                    <StyledTableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
+                                        No licenses found.
+                                    </StyledTableCell>
+                                </StyledTableRow>
+                            )}
+                        </StyledTableBody>
+                    </StyledTable>
+                </StyledListPaper>
+            </ListTableScrollZone>
+
+            <ListPaginationBar>
+                <TablePagination
+                    component="div"
+                    count={total}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50, 100]}
+                />
+            </ListPaginationBar>
 
             <LicenseDetailsDialog
                 license={selectedLicense}
@@ -388,6 +385,6 @@ export const LicenseList: React.FC<LicenseListProps> = () => {
                 title="Configure License Columns"
                 isLoaded={isLoaded}
             />
-        </TableContainer>
+        </ListPageRoot>
     );
 };

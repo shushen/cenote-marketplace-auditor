@@ -294,6 +294,88 @@ export const PaginationWrapper = styled(Box)(({ theme }) => ({
     },
 }));
 
+/* ---------------------------------------------------------------------------
+ * Shared layout for paginated list pages (Licenses, Transactions, Quotes).
+ * The scroll zone is the only scroll container: the sticky header anchors to it
+ * (vertical) and the single native table scrolls horizontally within it. The
+ * footer sits outside the zone so both scrollbars appear above/left of it.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Full-height flex column bounded to the visible area of `Main`. The negative top margin cancels
+ * ContentContainer's top padding so the zone (and its scrollbar) reaches the AppBar. No horizontal
+ * padding here: the scroll zone owns the left inset so its vertical scrollbar stays flush right.
+ */
+export const ListPageRoot = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    height: 'calc(100vh - 64px)',
+    marginTop: `-${theme.spacing(3)}`,
+    [theme.breakpoints.down('md')]: {
+        marginTop: `-${theme.spacing(2)}`,
+    },
+}));
+
+/**
+ * The only scroll container for the table region (both axes). The left inset lives here
+ * (padding-left only) so the vertical scrollbar stays flush against the right edge.
+ */
+export const ListTableScrollZone = styled(Box)(({ theme }) => ({
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
+    overflow: 'auto',
+    position: 'relative',
+    paddingLeft: theme.spacing(2),
+    [theme.breakpoints.down('md')]: {
+        paddingLeft: theme.spacing(1),
+    },
+}));
+
+/** Full-width footer variant: neutralizes PaginationWrapper's negative margins since ListPageRoot has no horizontal padding. */
+export const ListPaginationBar = styled(PaginationWrapper)(({ theme }) => ({
+    marginLeft: 0,
+    marginRight: 0,
+    width: '100%',
+    [theme.breakpoints.down('md')]: {
+        marginLeft: 0,
+        marginRight: 0,
+        width: '100%',
+    },
+}));
+
+/**
+ * Wraps the title + search/filter controls inside the scroll zone. They scroll off the top
+ * vertically (behavior retained from the original layout) but stay pinned to the left while
+ * scrolling horizontally, so they never drift out of view sideways.
+ */
+export const ListControlsScrollLayer = styled(Box)(({ theme }) => ({
+    position: 'sticky',
+    left: 0,
+    zIndex: 3,
+    width: '100%',
+    backgroundColor: theme.palette.background.paper,
+}));
+
+/** Page title inside the scroll zone. Top padding gives breathing room below the AppBar while the
+ *  scroll zone (and its scrollbar) stays flush to the top. Left alignment comes from the zone's padding. */
+export const ListTitleBar = styled(Box)(({ theme }) => ({
+    paddingTop: theme.spacing(3),
+    marginBottom: theme.spacing(3),
+    [theme.breakpoints.down('md')]: {
+        paddingTop: theme.spacing(2),
+        marginBottom: theme.spacing(2),
+    },
+    '@media (max-height: 500px)': {
+        marginBottom: theme.spacing(0.5),
+        '& .MuiTypography-root': {
+            fontSize: '1.1rem',
+            lineHeight: 1.3,
+        },
+    },
+}));
+
 export const StyledTableHead = styled(TableHead)(({ theme }) => ({
     marginTop: 0,
     paddingTop: 0,

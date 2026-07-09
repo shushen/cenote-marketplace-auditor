@@ -11,11 +11,11 @@ import {
     InputLabel,
     InputAdornment,
     Button,
+    Typography,
 } from '@mui/material';
 import { Search as SearchIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import { TransactionQuerySortType, TransactionResult, AppInfo } from '#common/types/apiTypes.js';
-import { StyledTableContainer, TableScrollWrapper, TableWrapper, LoadingOverlay, TableContainer, StyledTable, StyledTableHead, StyledTableBody, PaginationWrapper } from '../../components/styles';
-import { TableWithMeasuredFooter } from '../../components/TableWithMeasuredFooter';
+import { LoadingOverlay, StyledTable, StyledTableHead, StyledTableBody, ListPageRoot, ListTableScrollZone, ListControlsScrollLayer, ListTitleBar, ListPaginationBar } from '../../components/styles';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { TransactionReconcileDialog } from './TransactionReconcileDialog';
 import { SortOrder } from '../../components/SortableHeader';
@@ -199,158 +199,155 @@ export const TransactionList: React.FC<TransactionListProps> = () => {
     };
 
     return (
-        <TableContainer>
-            <ResponsiveSearchContainer sx={{ mb: 0 }}>
-                <TextField
-                    className="search-field"
-                    label=""
-                    variant="outlined"
-                    value={search}
-                    onChange={handleSearchChange}
-                    onKeyPress={handleKeyPress}
-                    size="small"
-                    placeholder="Search"
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <CollapsibleFilters label={<span className="filter-label">Filters:</span>}>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>Reconciliation Status</InputLabel>
-                        <Select
-                            value={reconciledFilter}
-                            label="Reconciliation Status"
-                            onChange={handleReconciledFilterChange}
-                        >
-                            <MenuItem value="">All Transactions</MenuItem>
-                            <MenuItem value="Y">Reconciled</MenuItem>
-                            <MenuItem value="N">Unreconciled</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>Sale Type</InputLabel>
-                        <Select
-                            value={saleTypeFilter}
-                            label="Sale Type"
-                            onChange={handleSaleTypeFilterChange}
-                        >
-                            <MenuItem value="">All Sale Types</MenuItem>
-                            <MenuItem value="New">New</MenuItem>
-                            <MenuItem value="Refund">Refund</MenuItem>
-                            <MenuItem value="Renewal">Renewal</MenuItem>
-                            <MenuItem value="Upgrade">Upgrade</MenuItem>
-                            <MenuItem value="Downgrade">Downgrade</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>Hosting</InputLabel>
-                        <Select
-                            value={hostingFilter}
-                            label="Hosting"
-                            onChange={handleHostingFilterChange}
-                        >
-                            <MenuItem value="">All Hosting</MenuItem>
-                            <MenuItem value="Cloud">Cloud</MenuItem>
-                            <MenuItem value="Data Center">Data Center</MenuItem>
-                            <MenuItem value="Server">Server</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <FormControl size="small" className="filter-dropdown">
-                        <InputLabel>App</InputLabel>
-                        <Select
-                            value={appFilter}
-                            label="App"
-                            onChange={handleAppFilterChange}
-                        >
-                            <MenuItem value="">All Apps</MenuItem>
-                            {apps.map((app) => (
-                                <MenuItem key={app.addonKey} value={app.addonKey}>
-                                    {app.name}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </CollapsibleFilters>
-                <Button
-                    className="columns-button"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<SettingsIcon />}
-                    onClick={() => setShowColumnConfig(true)}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Columns
-                </Button>
-            </ResponsiveSearchContainer>
-
-            <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
-
-            <TableWithMeasuredFooter
-                table={
-                    <TableScrollWrapper>
-                        <TableWrapper>
-                            <StyledTableContainer>
-                                <StyledListPaper>
-                                    {loading && (
-                                        <LoadingOverlay>
-                                            <CircularProgress />
-                                        </LoadingOverlay>
-                                    )}
-                                    <StyledTable>
-                                        <StyledTableHead>
-                                            <TableRow>
-                                                {visibleColumns.map((column) =>
-                                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
-                                                )}
-                                            </TableRow>
-                                        </StyledTableHead>
-                                        <StyledTableBody>
-                                            {transactions && transactions.length > 0 ? (
-                                                transactions.map((tr) => (
-                                                    <StyledTableRow
-                                                        key={`${tr.transaction.id}`}
-                                                        onClick={() => setSelectedTransaction(tr)}
-                                                    >
-                                                        {visibleColumns.map((column) =>
-                                                            renderCell(column, tr, cellContext)
-                                                        )}
-                                                    </StyledTableRow>
-                                                ))
-                                            ) : !loading && (
-                                                <StyledTableRow>
-                                                    <StyledTableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
-                                                        No transactions. Please configure the application through the Configuration page, then start all tasks on the Tasks page.
-                                                    </StyledTableCell>
-                                                </StyledTableRow>
-                                            )}
-                                        </StyledTableBody>
-                                    </StyledTable>
-                                </StyledListPaper>
-                            </StyledTableContainer>
-                        </TableWrapper>
-                    </TableScrollWrapper>
-                }
-                footer={
-                    <PaginationWrapper>
-                        <TablePagination
-                            component="div"
-                            count={total}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
-                            rowsPerPageOptions={[10, 25, 50, 100]}
+        <ListPageRoot>
+            <ListTableScrollZone>
+                <ListControlsScrollLayer>
+                    <ListTitleBar>
+                        <Typography variant="h4" component="h1">
+                            Transactions
+                        </Typography>
+                    </ListTitleBar>
+                    <ResponsiveSearchContainer sx={{ mb: 0 }}>
+                        <TextField
+                            className="search-field"
+                            label=""
+                            variant="outlined"
+                            value={search}
+                            onChange={handleSearchChange}
+                            onKeyPress={handleKeyPress}
+                            size="small"
+                            placeholder="Search"
+                            spellCheck={false}
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
                         />
-                    </PaginationWrapper>
-                }
-            />
+                        <CollapsibleFilters label={<span className="filter-label">Filters:</span>}>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>Reconciliation Status</InputLabel>
+                                <Select
+                                    value={reconciledFilter}
+                                    label="Reconciliation Status"
+                                    onChange={handleReconciledFilterChange}
+                                >
+                                    <MenuItem value="">All Transactions</MenuItem>
+                                    <MenuItem value="Y">Reconciled</MenuItem>
+                                    <MenuItem value="N">Unreconciled</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>Sale Type</InputLabel>
+                                <Select
+                                    value={saleTypeFilter}
+                                    label="Sale Type"
+                                    onChange={handleSaleTypeFilterChange}
+                                >
+                                    <MenuItem value="">All Sale Types</MenuItem>
+                                    <MenuItem value="New">New</MenuItem>
+                                    <MenuItem value="Refund">Refund</MenuItem>
+                                    <MenuItem value="Renewal">Renewal</MenuItem>
+                                    <MenuItem value="Upgrade">Upgrade</MenuItem>
+                                    <MenuItem value="Downgrade">Downgrade</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>Hosting</InputLabel>
+                                <Select
+                                    value={hostingFilter}
+                                    label="Hosting"
+                                    onChange={handleHostingFilterChange}
+                                >
+                                    <MenuItem value="">All Hosting</MenuItem>
+                                    <MenuItem value="Cloud">Cloud</MenuItem>
+                                    <MenuItem value="Data Center">Data Center</MenuItem>
+                                    <MenuItem value="Server">Server</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" className="filter-dropdown">
+                                <InputLabel>App</InputLabel>
+                                <Select
+                                    value={appFilter}
+                                    label="App"
+                                    onChange={handleAppFilterChange}
+                                >
+                                    <MenuItem value="">All Apps</MenuItem>
+                                    {apps.map((app) => (
+                                        <MenuItem key={app.addonKey} value={app.addonKey}>
+                                            {app.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </CollapsibleFilters>
+                        <Button
+                            className="columns-button"
+                            variant="outlined"
+                            size="small"
+                            startIcon={<SettingsIcon />}
+                            onClick={() => setShowColumnConfig(true)}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            Columns
+                        </Button>
+                    </ResponsiveSearchContainer>
+                    <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
+                </ListControlsScrollLayer>
+
+                <StyledListPaper>
+                    {loading && (
+                        <LoadingOverlay>
+                            <CircularProgress />
+                        </LoadingOverlay>
+                    )}
+                    <StyledTable>
+                        <StyledTableHead>
+                            <TableRow>
+                                {visibleColumns.map((column) =>
+                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
+                                )}
+                            </TableRow>
+                        </StyledTableHead>
+                        <StyledTableBody>
+                            {transactions && transactions.length > 0 ? (
+                                transactions.map((tr) => (
+                                    <StyledTableRow
+                                        key={`${tr.transaction.id}`}
+                                        onClick={() => setSelectedTransaction(tr)}
+                                    >
+                                        {visibleColumns.map((column) =>
+                                            renderCell(column, tr, cellContext)
+                                        )}
+                                    </StyledTableRow>
+                                ))
+                            ) : !loading && (
+                                <StyledTableRow>
+                                    <StyledTableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
+                                        No transactions. Please configure the application through the Configuration page, then start all tasks on the Tasks page.
+                                    </StyledTableCell>
+                                </StyledTableRow>
+                            )}
+                        </StyledTableBody>
+                    </StyledTable>
+                </StyledListPaper>
+            </ListTableScrollZone>
+
+            <ListPaginationBar>
+                <TablePagination
+                    component="div"
+                    count={total}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50, 100]}
+                />
+            </ListPaginationBar>
 
             <TransactionDetailsDialog
                 transaction={selectedTransaction}
@@ -374,6 +371,6 @@ export const TransactionList: React.FC<TransactionListProps> = () => {
                 isLoaded={isLoaded}
                 lastColumnIds={TRANSACTION_LAST_COLUMN_IDS}
             />
-        </TableContainer>
+        </ListPageRoot>
     );
 };

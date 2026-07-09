@@ -8,24 +8,24 @@ import {
     Button,
     TextField,
     InputAdornment,
+    Typography,
 } from '@mui/material';
 import { Settings as SettingsIcon, Search as SearchIcon } from '@mui/icons-material';
 import { QuoteQuerySortType, QuoteResult } from '#common/types/apiTypes.js';
 import {
-    StyledTableContainer,
-    TableScrollWrapper,
-    TableWrapper,
-    TableContainer,
     StyledTable,
     StyledTableHead,
     StyledTableBody,
-    PaginationWrapper,
     StyledTableRow,
     StyledListPaper,
     StyledTableCell,
     TableLoadingCell,
+    ListPageRoot,
+    ListTableScrollZone,
+    ListControlsScrollLayer,
+    ListTitleBar,
+    ListPaginationBar,
 } from '../../components/styles';
-import { TableWithMeasuredFooter } from '../../components/TableWithMeasuredFooter';
 import { QuoteDetailsDialog } from './QuoteDetailsDialog';
 import { ColumnConfigDialog } from '../../components/ColumnConfig';
 import { useColumnConfig } from '../../components/useColumnConfig';
@@ -133,108 +133,104 @@ export const QuoteList: React.FC = () => {
     const cellContext: QuoteCellContext = {};
 
     return (
-        <TableContainer>
-            {error && (
-                <Box sx={{ mb: 2 }}>
-                    <Alert severity="error">{error}</Alert>
-                </Box>
-            )}
-
-            <ResponsiveSearchContainer sx={{ mb: 0 }}>
-                <TextField
-                    className="search-field"
-                    label=""
-                    variant="outlined"
-                    value={search}
-                    onChange={handleSearchChange}
-                    onKeyPress={handleKeyPress}
-                    size="small"
-                    placeholder="Search"
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <Button
-                    className="columns-button"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<SettingsIcon />}
-                    onClick={() => setShowColumnConfig(true)}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Columns
-                </Button>
-            </ResponsiveSearchContainer>
-
-            <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
-
-            <TableWithMeasuredFooter
-                table={
-                    <TableScrollWrapper>
-                        <TableWrapper>
-                            <StyledTableContainer>
-                                <StyledListPaper>
-                                    <StyledTable>
-                                        <StyledTableHead>
-                                            <TableRow>
-                                                {visibleColumns.map((column) =>
-                                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
-                                                )}
-                                            </TableRow>
-                                        </StyledTableHead>
-                                        <StyledTableBody>
-                                            {loading ? (
-                                                <StyledTableRow>
-                                                    <TableLoadingCell colSpan={visibleColumns.length || 1}>
-                                                        <CircularProgress />
-                                                    </TableLoadingCell>
-                                                </StyledTableRow>
-                                            ) : quotes.length > 0 ? (
-                                                quotes.map((quoteResult) => (
-                                                    <StyledTableRow
-                                                        key={getQuoteRowKey(quoteResult)}
-                                                        onClick={() => setSelectedQuote(quoteResult)}
-                                                    >
-                                                        {visibleColumns.map((column) =>
-                                                            renderCell(column, quoteResult, cellContext)
-                                                        )}
-                                                    </StyledTableRow>
-                                                ))
-                                            ) : (
-                                                <StyledTableRow>
-                                                    <StyledTableCell colSpan={visibleColumns.length || 1} align="center" sx={{ py: 4 }}>
-                                                        {error ? 'Unable to load quotes' : debouncedSearch ? 'No quotes match your search' : 'No quotes found'}
-                                                    </StyledTableCell>
-                                                </StyledTableRow>
-                                            )}
-                                        </StyledTableBody>
-                                    </StyledTable>
-                                </StyledListPaper>
-                            </StyledTableContainer>
-                        </TableWrapper>
-                    </TableScrollWrapper>
-                }
-                footer={
-                    <PaginationWrapper>
-                        <TablePagination
-                            component="div"
-                            count={total}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
-                            rowsPerPageOptions={[10, 25, 50, 100]}
+        <ListPageRoot>
+            <ListTableScrollZone>
+                <ListControlsScrollLayer>
+                    <ListTitleBar>
+                        <Typography variant="h4" component="h1">
+                            Quotes
+                        </Typography>
+                    </ListTitleBar>
+                    {error && (
+                        <Box sx={{ mb: 2 }}>
+                            <Alert severity="error">{error}</Alert>
+                        </Box>
+                    )}
+                    <ResponsiveSearchContainer sx={{ mb: 0 }}>
+                        <TextField
+                            className="search-field"
+                            label=""
+                            variant="outlined"
+                            value={search}
+                            onChange={handleSearchChange}
+                            onKeyPress={handleKeyPress}
+                            size="small"
+                            placeholder="Search"
+                            spellCheck={false}
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
                         />
-                    </PaginationWrapper>
-                }
-            />
+                        <Button
+                            className="columns-button"
+                            variant="outlined"
+                            size="small"
+                            startIcon={<SettingsIcon />}
+                            onClick={() => setShowColumnConfig(true)}
+                            sx={{ textTransform: 'none' }}
+                        >
+                            Columns
+                        </Button>
+                    </ResponsiveSearchContainer>
+                    <Box aria-hidden sx={{ height: 16, flexShrink: 0 }} />
+                </ListControlsScrollLayer>
+
+                <StyledListPaper>
+                    <StyledTable>
+                        <StyledTableHead>
+                            <TableRow>
+                                {visibleColumns.map((column) =>
+                                    renderHeader(column, { sortBy, sortOrder, onSort: handleSort })
+                                )}
+                            </TableRow>
+                        </StyledTableHead>
+                        <StyledTableBody>
+                            {loading ? (
+                                <StyledTableRow>
+                                    <TableLoadingCell colSpan={visibleColumns.length || 1}>
+                                        <CircularProgress />
+                                    </TableLoadingCell>
+                                </StyledTableRow>
+                            ) : quotes.length > 0 ? (
+                                quotes.map((quoteResult) => (
+                                    <StyledTableRow
+                                        key={getQuoteRowKey(quoteResult)}
+                                        onClick={() => setSelectedQuote(quoteResult)}
+                                    >
+                                        {visibleColumns.map((column) =>
+                                            renderCell(column, quoteResult, cellContext)
+                                        )}
+                                    </StyledTableRow>
+                                ))
+                            ) : (
+                                <StyledTableRow>
+                                    <StyledTableCell colSpan={visibleColumns.length || 1} align="center" sx={{ py: 4 }}>
+                                        {error ? 'Unable to load quotes' : debouncedSearch ? 'No quotes match your search' : 'No quotes found'}
+                                    </StyledTableCell>
+                                </StyledTableRow>
+                            )}
+                        </StyledTableBody>
+                    </StyledTable>
+                </StyledListPaper>
+            </ListTableScrollZone>
+
+            <ListPaginationBar>
+                <TablePagination
+                    component="div"
+                    count={total}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    rowsPerPageOptions={[10, 25, 50, 100]}
+                />
+            </ListPaginationBar>
 
             <QuoteDetailsDialog
                 quoteResult={selectedQuote}
@@ -250,6 +246,6 @@ export const QuoteList: React.FC = () => {
                 title="Configure Quote Columns"
                 isLoaded={isLoaded}
             />
-        </TableContainer>
+        </ListPageRoot>
     );
 };
