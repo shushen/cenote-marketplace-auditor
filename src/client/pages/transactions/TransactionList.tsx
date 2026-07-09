@@ -27,6 +27,7 @@ import { renderHeader, renderCell } from '../../components/columnRenderHelpers';
 import { ResponsiveSearchContainer } from '../../components/ResponsiveSearchContainer';
 import { CollapsibleFilters } from '../../components/CollapsibleFilters';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
+import { useScrollReset } from '../../hooks/useScrollReset';
 
 interface TransactionListProps {
     // Add props if needed
@@ -57,6 +58,8 @@ export const TransactionList: React.FC<TransactionListProps> = () => {
         'transaction-column-config',
         TRANSACTION_LAST_COLUMN_IDS
     );
+
+    const { scrollRef, resetScroll } = useScrollReset<HTMLDivElement>();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -113,11 +116,13 @@ export const TransactionList: React.FC<TransactionListProps> = () => {
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
+        resetScroll();
     };
 
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
+        resetScroll();
     };
 
     const handleSort = (field: TransactionQuerySortType) => {
@@ -200,7 +205,7 @@ export const TransactionList: React.FC<TransactionListProps> = () => {
 
     return (
         <ListPageRoot>
-            <ListTableScrollZone>
+            <ListTableScrollZone ref={scrollRef}>
                 <ListControlsScrollLayer>
                     <ListTitleBar>
                         <Typography variant="h4" component="h1">

@@ -34,6 +34,7 @@ import { renderHeader, renderCell } from '../../components/columnRenderHelpers';
 import { ResponsiveSearchContainer } from '../../components/ResponsiveSearchContainer';
 import { SortOrder } from '../../components/SortableHeader';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
+import { useScrollReset } from '../../hooks/useScrollReset';
 
 function getQuoteRowKey(quoteResult: QuoteResult): string {
     return quoteResult.quote.id;
@@ -57,6 +58,8 @@ export const QuoteList: React.FC = () => {
         defaultQuoteColumns,
         'quote-column-config'
     );
+
+    const { scrollRef, resetScroll } = useScrollReset<HTMLDivElement>();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -102,11 +105,13 @@ export const QuoteList: React.FC = () => {
 
     const handleChangePage = (_event: unknown, newPage: number) => {
         setPage(newPage);
+        resetScroll();
     };
 
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
+        resetScroll();
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,7 +139,7 @@ export const QuoteList: React.FC = () => {
 
     return (
         <ListPageRoot>
-            <ListTableScrollZone>
+            <ListTableScrollZone ref={scrollRef}>
                 <ListControlsScrollLayer>
                     <ListTitleBar>
                         <Typography variant="h4" component="h1">

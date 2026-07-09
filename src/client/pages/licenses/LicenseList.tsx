@@ -29,6 +29,7 @@ import { renderHeader, renderCell } from '../../components/columnRenderHelpers';
 import { ResponsiveSearchContainer } from '../../components/ResponsiveSearchContainer';
 import { CollapsibleFilters } from '../../components/CollapsibleFilters';
 import { useSearchParamState } from '../../hooks/useSearchParamState';
+import { useScrollReset } from '../../hooks/useScrollReset';
 
 interface LicenseListProps {
     // Add props if needed
@@ -61,6 +62,8 @@ export const LicenseList: React.FC<LicenseListProps> = () => {
         defaultLicenseColumns,
         'license-column-config'
     );
+
+    const { scrollRef, resetScroll } = useScrollReset<HTMLDivElement>();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -117,11 +120,13 @@ export const LicenseList: React.FC<LicenseListProps> = () => {
 
     const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
+        resetScroll();
     };
 
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
+        resetScroll();
     };
 
     const handleSort = (field: LicenseQuerySortType) => {
@@ -171,7 +176,7 @@ export const LicenseList: React.FC<LicenseListProps> = () => {
 
     return (
         <ListPageRoot>
-            <ListTableScrollZone>
+            <ListTableScrollZone ref={scrollRef}>
                 <ListControlsScrollLayer>
                     <ListTitleBar>
                         <Typography variant="h4" component="h1">
