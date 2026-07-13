@@ -1,5 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Transaction } from "#common/entities/Transaction.js";
+import { License } from "#common/entities/License.js";
 import { TYPES } from "../../config/types.js";
 import { Repository } from "typeorm";
 import { DataSource } from "typeorm";
@@ -7,6 +8,7 @@ import { TransactionData } from "#common/types/marketplace.js";
 import { TransactionQueryParams, TransactionQueryResult, TransactionQuerySortType } from "#common/types/apiTypes.js";
 import { In } from "typeorm";
 import { SelectQueryBuilder } from "typeorm";
+import { collectRelatedEntitlementDisplayIds, isMultiInstanceTransaction } from "#common/util/multiInstanceUtils.js";
 
 @injectable()
 class TransactionDao {
@@ -164,6 +166,38 @@ class TransactionDao {
         });
     }
 
+    private async loadMultiInstanceEntitlementNumbers(entitlementIds: string[]): Promise<Map<string, string[]>> {
+        if (entitlementIds.length === 0) {
+            return new Map();
+        }
+
+        const licenseRows = await this.dataSource
+            .getRepository(License)
+            .createQueryBuilder('license')
+            .select("license.data->>'hosting'", 'hosting')
+            .addSelect("license.data->>'licenseId'", 'licenseId')
+            .addSelect("license.data->>'appEntitlementNumber'", 'appEntitlementNumber')
+            .addSelect("license.data->>'multiInstanceEntitlementNumber'", 'multiInstanceEntitlementNumber')
+            .where("license.data->>'licenseLevel' = 'multi-instance'")
+            .andWhere(
+                "(license.data->>'appEntitlementNumber' IN (:...entitlementIds) OR license.data->>'multiInstanceEntitlementNumber' IN (:...entitlementIds))",
+                { entitlementIds }
+            )
+            .getRawMany<{
+                hosting: string | null;
+                licenseId?: string | null;
+                appEntitlementNumber?: string | null;
+                multiInstanceEntitlementNumber?: string | null;
+            }>();
+
+        return new Map(
+            entitlementIds.map(entitlementId => [
+                entitlementId,
+                collectRelatedEntitlementDisplayIds(entitlementId, licenseRows)
+            ])
+        );
+    }
+
     async getTransactions(params: TransactionQueryParams): Promise<TransactionQueryResult> {
         const {
             start = 0,
@@ -247,16 +281,25 @@ class TransactionDao {
 
             await this.loadNotesForTransactions(transactions);
 
+            const multiInstanceEntitlementIds = transactions
+                .filter(transaction => isMultiInstanceTransaction(transaction.data))
+                .map(transaction => transaction.entitlementId);
+            const relatedEntitlementNumbersById = await this.loadMultiInstanceEntitlementNumbers(multiInstanceEntitlementIds);
+
             const transactionResults = transactions.map((transaction, index) => {
                 const versionCount = parseInt(rawResults[index].transaction_versionCount) || 0;
                 const isSandbox = rawResults[index].license_installedOnSandbox === 'Yes';
                 const cloudSiteHostname = rawResults[index].license_cloudSiteHostname;
+                const relatedEntitlementNumbers = isMultiInstanceTransaction(transaction.data)
+                    ? relatedEntitlementNumbersById.get(transaction.entitlementId)
+                    : undefined;
 
                 return {
                     transaction,
                     versionCount,
                     isSandbox,
-                    cloudSiteHostname
+                    cloudSiteHostname,
+                    relatedEntitlementNumbers
                 };
             });
 

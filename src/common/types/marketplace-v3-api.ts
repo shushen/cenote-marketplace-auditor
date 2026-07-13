@@ -9597,8 +9597,6 @@ export interface components {
         QuoteCollectionLinks: {
             self: components["schemas"]["Link"];
             query: components["schemas"]["LinkTemplate"];
-            /** @description Links for exporting quotes with the currently specified filter parameters */
-            export: components["schemas"]["Link"][];
             next?: components["schemas"]["Link"];
             prev?: components["schemas"]["Link"];
         };

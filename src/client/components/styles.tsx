@@ -796,3 +796,12 @@ export const WrappedLabel = styled('span')({
 export const EntitlementIdLink = styled(Link)({
     textDecoration: 'none'
 });
+
+export const EntitlementIdList = styled('div')({
+    whiteSpace: 'normal'
+});
+
+export const EntitlementIdListItem = styled('div')({
+    lineHeight: 1.4,
+    whiteSpace: 'nowrap'
+});

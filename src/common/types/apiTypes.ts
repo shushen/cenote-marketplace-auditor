@@ -7,6 +7,7 @@ export interface TransactionResult {
     isSandbox: boolean;
     versionCount: number;
     cloudSiteHostname: string;
+    relatedEntitlementNumbers?: string[];
 }
 
 export interface TransactionQueryResult {

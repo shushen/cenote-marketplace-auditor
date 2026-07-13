@@ -1,10 +1,11 @@
 import { ColumnConfig } from '../../components/ColumnConfig';
 import { LicenseQuerySortType, LicenseResult } from '#common/types/apiTypes.js';
-import { WrappedLabel, EntitlementIdLink } from '#client/components/styles.js';
+import { WrappedLabel } from '#client/components/styles.js';
 import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
 import { dateDiff } from '#common/util/dateUtils.js';
 import { EmphasizedAnnotation } from '../../components/styles';
-import { getLicenseDisplayId } from '#common/util/displayIdUtils.js';
+import { getLicenseEntitlementDisplayParts } from '#common/util/multiInstanceUtils.js';
+import { EntitlementIdListCell } from '../../components/EntitlementIdListCell';
 
 // Define the context type for license cell rendering (currently no context needed)
 export interface LicenseCellContext {
@@ -31,15 +32,17 @@ export const defaultLicenseColumns: ColumnConfig<LicenseResult, LicenseCellConte
         id: 'entitlementId',
         label: 'Entitlement',
         visible: true,
-        nowrap: true,
-        renderSimpleCell: (lr) => {
-            const displayId = getLicenseDisplayId(lr.license.data);
-            return (
-                <EntitlementIdLink to={`/transactions?search=${encodeURIComponent(displayId)}`}>
-                    {displayId}
-                </EntitlementIdLink>
-            );
-        }
+        renderSimpleCell: (lr) => (
+            <EntitlementIdListCell
+                entries={getLicenseEntitlementDisplayParts(lr.license.data).map(part => ({
+                    displayId: part.displayId,
+                    searchPath: 'transactions' as const,
+                    suffix: part.showMultiInstanceTag
+                        ? <EmphasizedAnnotation as="span"> (Multi-Instance)</EmphasizedAnnotation>
+                        : undefined
+                }))}
+            />
+        )
     },
     {
         id: 'app',

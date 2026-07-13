@@ -58,6 +58,8 @@ interface EnhancedTransactionPurchaseDetails extends Omit<components["schemas"][
 
 export interface TransactionData extends Omit<v3Components["schemas"]["Transaction"], 'purchaseDetails'> {
     purchaseDetails: EnhancedTransactionPurchaseDetails;
+    /** Tiers or categories within a cloud license based on the number of instances. Values can be 'single-instance', 'multi-instance' or null. */
+    licenseLevel?: 'single-instance' | 'multi-instance' | string;
 }
 // END: Hack to work around problem of missing saleType='Downgrade' in the OpenAPI spec
 

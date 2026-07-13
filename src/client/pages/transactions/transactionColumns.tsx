@@ -1,6 +1,6 @@
 import { ColumnConfig } from '../../components/ColumnConfig';
 import { TransactionQuerySortType, TransactionResult } from '#common/types/apiTypes.js';
-import { WrappedLabel, EntitlementIdLink } from '#client/components/styles.js';
+import { WrappedLabel } from '#client/components/styles.js';
 import { formatCurrency } from '#common/util/formatCurrency.js';
 import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
 import { dateDiff } from '#common/util/dateUtils.js';
@@ -12,7 +12,11 @@ import { mapDiscountTypeToDescription } from './util';
 import { StatusCell, ReconciliationHeaderCell, MqbAnnotation } from '../../components/styles';
 import { isMQBTransaction } from '#common/util/mqbUtils.js';
 import { ReconciliationControls } from './ReconciliationControls';
-import { getTransactionDisplayId } from '#common/util/displayIdUtils.js';
+import {
+    getTransactionEntitlementDisplayIds,
+    isMultiInstanceTransaction
+} from '#common/util/multiInstanceUtils.js';
+import { EntitlementIdListCell } from '../../components/EntitlementIdListCell';
 
 // Define the context type for transaction cell rendering
 export interface TransactionCellContext {
@@ -57,16 +61,17 @@ export const defaultTransactionColumns: ColumnConfig<TransactionResult, Transact
         id: 'entitlementId',
         label: 'Entitlement',
         visible: true,
-        nowrap: true,
-        renderSimpleCell: (tr) => {
-            const displayId = getTransactionDisplayId(tr.transaction.data);
-
-            return (
-                <EntitlementIdLink to={`/licenses?search=${encodeURIComponent(displayId)}`}>
-                    {displayId}
-                </EntitlementIdLink>
-            );
-        }
+        renderSimpleCell: (tr) => (
+            <EntitlementIdListCell
+                entries={getTransactionEntitlementDisplayIds(
+                    tr.transaction.data,
+                    tr.relatedEntitlementNumbers
+                ).map(displayId => ({
+                    displayId,
+                    searchPath: 'licenses' as const
+                }))}
+            />
+        )
     },
     {
         id: 'invoiceNumber',
@@ -131,6 +136,7 @@ export const defaultTransactionColumns: ColumnConfig<TransactionResult, Transact
                 {tr.transaction.data.purchaseDetails.tier}
                 {tr.isSandbox && <EmphasizedAnnotation>Sandbox</EmphasizedAnnotation>}
                 {tr.transaction.data.purchaseDetails.discounts?.some(d => d.type==='MANUAL' && d.reason==='DUAL_LICENSING') && <EmphasizedAnnotation>Dual Licensing</EmphasizedAnnotation>}
+                {isMultiInstanceTransaction(tr.transaction.data) && <EmphasizedAnnotation>Multi-Instance</EmphasizedAnnotation>}
                 {isMQBTransaction(tr.transaction) && <MqbAnnotation>(MQB)</MqbAnnotation>}
             </>
         )
