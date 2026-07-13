@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ColumnConfig } from './ColumnConfig';
 import { enforceLastColumnOrder, enforceLastColumns } from './columnOrderUtils';
 
@@ -7,13 +7,16 @@ interface ColumnPreferences {
     visibility: Record<string, boolean>; // Map of column ID to visibility
 }
 
+const EMPTY_LAST_COLUMN_IDS: string[] = [];
+
 export const useColumnConfig = <T extends any, C extends any = any, S extends any = any>(
     defaultColumns: ColumnConfig<T, C, S>[],
     storageKey: string,
-    lastColumnIds: string[] = []
+    lastColumnIds: string[] = EMPTY_LAST_COLUMN_IDS
 ) => {
     const [columns, setColumns] = useState<ColumnConfig<T, C, S>[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const lastColumnIdsKey = lastColumnIds.join('|');
 
     // Load configuration from localStorage on mount
     useEffect(() => {
@@ -62,7 +65,7 @@ export const useColumnConfig = <T extends any, C extends any = any, S extends an
             setColumns(enforceLastColumns(defaultColumns, lastColumnIds));
         }
         setIsLoaded(true);
-    }, [defaultColumns, storageKey, lastColumnIds]);
+    }, [defaultColumns, storageKey, lastColumnIdsKey]);
 
     // Save configuration to localStorage when it changes
     const updateColumns = (newColumns: ColumnConfig<T, C, S>[]) => {

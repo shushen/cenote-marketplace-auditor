@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -185,13 +185,15 @@ export const ColumnConfigDialog = <T extends any, C extends any, S extends any>(
 }: ColumnConfigDialogProps<T, C, S>) => {
     const [localColumns, setLocalColumns] = useState<ColumnConfig<T, C, S>[]>(columns);
     const lastColumnIdSet = new Set(lastColumnIds);
+    const wasOpen = useRef(false);
 
-    // Update local columns when the prop changes (after loading)
+    // Sync from saved config only when the dialog opens
     useEffect(() => {
-        if (isLoaded) {
+        if (open && !wasOpen.current && isLoaded) {
             setLocalColumns(columns);
         }
-    }, [columns, isLoaded]);
+        wasOpen.current = open;
+    }, [open, columns, isLoaded]);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
