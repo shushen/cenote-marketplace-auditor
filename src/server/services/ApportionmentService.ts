@@ -75,7 +75,15 @@ export class ApportionmentService {
             }
 
             const { addonKey } = transaction.data;
-            const { hosting, saleDate: purchaseDate } = transaction.data.purchaseDetails;
+            const {
+                hosting,
+                saleDate: purchaseDate,
+                saleType,
+                maintenanceStartDate = '',
+                maintenanceEndDate = ''
+            } = transaction.data.purchaseDetails;
+            const company = transaction.data.customerDetails?.company ?? '';
+            const entitlementNumber = transaction.entitlementId;
             const transactionCreatedAt = isoStringWithOnlyDate(transaction.createdAt.toISOString());
             const versionCreatedAt = versionCreatedAtByTransactionId.get(transaction.id);
             const transactionVersionCreatedAt = versionCreatedAt
@@ -101,6 +109,11 @@ export class ApportionmentService {
                     ),
                     transactionVersion: transaction.currentVersion,
                     purchaseDate,
+                    saleType,
+                    entitlementNumber,
+                    company,
+                    maintenanceStartDate,
+                    maintenanceEndDate,
                     transactionCreatedAt,
                     transactionVersionCreatedAt,
                     actualAmount: entry.actualValue,

@@ -4,6 +4,11 @@ export const APPORTIONMENT_EXCEL_HEADERS = [
     'App',
     'Hosting',
     'Year',
+    'Sale Type',
+    'Entitlement Number',
+    'Company',
+    'Maintenance Start Date',
+    'Maintenance End Date',
     'Transaction ID',
     'Marketplace Transaction ID',
     'Transaction Version',
@@ -18,18 +23,23 @@ export const APPORTIONMENT_EXCEL_ACCOUNTING_NUM_FMT =
 
 export const APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES = {
     app: 1,
-    transactionId: 4,
-    marketplaceTransactionId: 5,
-    actualAmount: 10
+    transactionId: 9,
+    marketplaceTransactionId: 10,
+    actualAmount: 15
 } as const;
 
 export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
     app: 0,
-    transactionId: 3,
-    marketplaceTransactionId: 4
+    transactionId: 8,
+    marketplaceTransactionId: 9
 } as const;
 
 export type ApportionmentExcelRow = [
+    string,
+    string,
+    string,
+    string,
+    string,
     string,
     string,
     string,
@@ -55,6 +65,11 @@ export function buildApportionmentExcelRows(byAddon: YearlyApportionmentByAddon[
                         appName,
                         hostingGroup.hosting,
                         yearEntry.year,
+                        transaction.saleType,
+                        transaction.entitlementNumber,
+                        transaction.company,
+                        transaction.maintenanceStartDate,
+                        transaction.maintenanceEndDate,
                         transaction.transactionId,
                         transaction.marketplaceTransactionId,
                         transaction.transactionVersion,

@@ -5,6 +5,11 @@ export interface ApportionmentTransactionRef {
     marketplaceTransactionId: string;
     transactionVersion: number;
     purchaseDate: string;
+    saleType: string;
+    entitlementNumber: string;
+    company: string;
+    maintenanceStartDate: string;
+    maintenanceEndDate: string;
     transactionCreatedAt: string;
     transactionVersionCreatedAt: string;
     actualAmount: number;
