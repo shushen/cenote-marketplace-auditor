@@ -23,6 +23,8 @@ describe('buildApportionmentExcelRows', () => {
                                 marketplaceTransactionId: 'mp-tx-1',
                                 transactionVersion: 2,
                                 purchaseDate: '2026-06-15',
+                                transactionCreatedAt: '2026-06-01',
+                                transactionVersionCreatedAt: '2026-06-10',
                                 actualAmount: 100,
                                 addonKey: 'com.app.a',
                                 hosting: 'Cloud'
@@ -45,6 +47,8 @@ describe('buildApportionmentExcelRows', () => {
                             marketplaceTransactionId: 'mp-tx-2',
                             transactionVersion: 1,
                             purchaseDate: '2026-06-20',
+                            transactionCreatedAt: '2026-06-02',
+                            transactionVersionCreatedAt: '2026-06-20',
                             actualAmount: 50,
                             addonKey: 'com.app.b',
                             hosting: 'Data Center'
@@ -65,6 +69,8 @@ describe('buildApportionmentExcelRows', () => {
                 'mp-tx-1',
                 2,
                 '2026-06-15',
+                '2026-06-01',
+                '2026-06-10',
                 100
             ],
             [
@@ -74,6 +80,8 @@ describe('buildApportionmentExcelRows', () => {
                 'tx-2',
                 'mp-tx-2',
                 1,
+                '2026-06-20',
+                '2026-06-02',
                 '2026-06-20',
                 50
             ]
@@ -89,6 +97,8 @@ describe('buildApportionmentExcelRows', () => {
             'Marketplace Transaction ID',
             'Transaction Version',
             'Purchase Date',
+            'Transaction Creation Date',
+            'Transaction Last Updated',
             'Actual Amount'
         ]);
     });
@@ -104,6 +114,8 @@ describe('buildApportionmentExcelRows', () => {
                 'mp-transaction-with-a-long-id',
                 1,
                 '2026-06-15',
+                '2026-06-01',
+                '2026-06-10',
                 10
             ]],
             4

@@ -8,6 +8,8 @@ export const APPORTIONMENT_EXCEL_HEADERS = [
     'Marketplace Transaction ID',
     'Transaction Version',
     'Purchase Date',
+    'Transaction Creation Date',
+    'Transaction Last Updated',
     'Actual Amount'
 ] as const;
 
@@ -18,7 +20,7 @@ export const APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES = {
     app: 1,
     transactionId: 4,
     marketplaceTransactionId: 5,
-    actualAmount: 8
+    actualAmount: 10
 } as const;
 
 export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
@@ -34,6 +36,8 @@ export type ApportionmentExcelRow = [
     string,
     string,
     number,
+    string,
+    string,
     string,
     number
 ];
@@ -55,6 +59,8 @@ export function buildApportionmentExcelRows(byAddon: YearlyApportionmentByAddon[
                         transaction.marketplaceTransactionId,
                         transaction.transactionVersion,
                         transaction.purchaseDate,
+                        transaction.transactionCreatedAt,
+                        transaction.transactionVersionCreatedAt,
                         transaction.actualAmount
                     ]);
                 }

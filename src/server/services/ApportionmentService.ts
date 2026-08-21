@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { TYPES } from '#server/config/types.js';
 import { TransactionDao } from '#server/database/dao/TransactionDao.js';
+import { TransactionVersionDao } from '#server/database/dao/TransactionVersionDao.js';
 import { AddonDao } from '#server/database/dao/AddonDao.js';
 import { PricingService } from '#server/services/PricingService.js';
 import { PriceCalculatorService } from '#server/services/PriceCalculatorService.js';
@@ -15,11 +16,13 @@ import { parsePurchaseMonth } from '#common/util/purchaseMonthUtils.js';
 import { buildYearlyApportionmentFromMonths } from '#common/util/apportionmentAggregation.js';
 import { rebindApportionmentBeforeSaleMonth } from '#common/util/apportionmentSaleMonthRebinding.js';
 import { formatMarketplaceTransactionIdForDisplay } from '#common/util/marketplaceTransactionId.js';
+import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
 
 @injectable()
 export class ApportionmentService {
     constructor(
         @inject(TYPES.TransactionDao) private transactionDao: TransactionDao,
+        @inject(TYPES.TransactionVersionDao) private transactionVersionDao: TransactionVersionDao,
         @inject(TYPES.AddonDao) private addonDao: AddonDao,
         @inject(TYPES.PricingService) private pricingService: PricingService,
         @inject(TYPES.TransactionValidationService) private transactionValidationService: TransactionValidationService,
@@ -60,6 +63,8 @@ export class ApportionmentService {
     public async calculateAggregateApportionment(purchaseMonth: string): Promise<MonthlyAggregateApportionmentResponse> {
         const { startDate, endDate } = parsePurchaseMonth(purchaseMonth);
         const transactions = await this.transactionDao.getTransactionsBySaleMonth(startDate, endDate);
+        const versionCreatedAtByTransactionId =
+            await this.transactionVersionDao.getCurrentVersionCreatedAtByTransactionIds(transactions);
 
         const monthAggregates = new Map<string, MonthlyAggregateApportionmentEntry>();
 
@@ -71,6 +76,11 @@ export class ApportionmentService {
 
             const { addonKey } = transaction.data;
             const { hosting, saleDate: purchaseDate } = transaction.data.purchaseDetails;
+            const transactionCreatedAt = isoStringWithOnlyDate(transaction.createdAt.toISOString());
+            const versionCreatedAt = versionCreatedAtByTransactionId.get(transaction.id);
+            const transactionVersionCreatedAt = versionCreatedAt
+                ? isoStringWithOnlyDate(versionCreatedAt.toISOString())
+                : '';
 
             for (const entry of apportionment) {
                 if (entry.actualValue === 0) {
@@ -91,6 +101,8 @@ export class ApportionmentService {
                     ),
                     transactionVersion: transaction.currentVersion,
                     purchaseDate,
+                    transactionCreatedAt,
+                    transactionVersionCreatedAt,
                     actualAmount: entry.actualValue,
                     addonKey,
                     hosting

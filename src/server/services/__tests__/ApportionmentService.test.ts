@@ -9,6 +9,7 @@ describe('ApportionmentService', () => {
         opts: { addonKey: string; hosting: 'Cloud' | 'Data Center'; marketplaceTransactionId?: string; purchaseDate?: string }
     ): Transaction => ({
         id,
+        createdAt: new Date('2026-06-01T12:00:00Z'),
         marketplaceTransactionId: opts.marketplaceTransactionId ?? `li-${id}:mp-${id}`,
         currentVersion: version,
         data: {
@@ -29,6 +30,12 @@ describe('ApportionmentService', () => {
         const transactionDao = {
             getTransactionsBySaleMonth: jest.fn().mockResolvedValue(transactions)
         };
+        const transactionVersionDao = {
+            getCurrentVersionCreatedAtByTransactionIds: jest.fn().mockResolvedValue(new Map([
+                ['tx-1', new Date('2026-06-10T12:00:00Z')],
+                ['tx-2', new Date('2026-06-12T12:00:00Z')]
+            ]))
+        };
 
         const apportionmentByTransaction: Record<string, TransactionMonthlyApportionmentEntry[]> = {
             'tx-1': [
@@ -43,6 +50,7 @@ describe('ApportionmentService', () => {
 
         const service = new ApportionmentService(
             transactionDao as any,
+            transactionVersionDao as any,
             {
                 getAddons: jest.fn().mockResolvedValue([
                     { addonKey: 'com.app.a', name: 'App A' },
@@ -79,6 +87,8 @@ describe('ApportionmentService', () => {
                                 marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                                 transactionVersion: 2,
                                 purchaseDate: '2026-06-15',
+                                transactionCreatedAt: '2026-06-01',
+                                transactionVersionCreatedAt: '2026-06-10',
                                 actualAmount: 100,
                                 addonKey: 'com.app.a',
                                 hosting: 'Cloud'
@@ -101,6 +111,8 @@ describe('ApportionmentService', () => {
                                 marketplaceTransactionId: 'mp-tx-2:li-tx-2',
                                 transactionVersion: 6,
                                 purchaseDate: '2026-06-15',
+                                transactionCreatedAt: '2026-06-01',
+                                transactionVersionCreatedAt: '2026-06-12',
                                 actualAmount: 100,
                                 addonKey: 'com.app.b',
                                 hosting: 'Data Center'
@@ -120,6 +132,8 @@ describe('ApportionmentService', () => {
                         marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
+                        transactionCreatedAt: '2026-06-01',
+                        transactionVersionCreatedAt: '2026-06-10',
                         actualAmount: 55,
                         addonKey: 'com.app.a',
                         hosting: 'Cloud'
@@ -129,6 +143,8 @@ describe('ApportionmentService', () => {
                         marketplaceTransactionId: 'mp-tx-2:li-tx-2',
                         transactionVersion: 6,
                         purchaseDate: '2026-06-15',
+                        transactionCreatedAt: '2026-06-01',
+                        transactionVersionCreatedAt: '2026-06-12',
                         actualAmount: 100,
                         addonKey: 'com.app.b',
                         hosting: 'Data Center'
@@ -144,6 +160,8 @@ describe('ApportionmentService', () => {
                         marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
+                        transactionCreatedAt: '2026-06-01',
+                        transactionVersionCreatedAt: '2026-06-10',
                         actualAmount: 45,
                         addonKey: 'com.app.a',
                         hosting: 'Cloud'
@@ -162,9 +180,15 @@ describe('ApportionmentService', () => {
         const transactionDao = {
             getTransactionsBySaleMonth: jest.fn().mockResolvedValue(transactions)
         };
+        const transactionVersionDao = {
+            getCurrentVersionCreatedAtByTransactionIds: jest.fn().mockResolvedValue(new Map([
+                ['tx-1', new Date('2026-06-10T12:00:00Z')]
+            ]))
+        };
 
         const service = new ApportionmentService(
             transactionDao as any,
+            transactionVersionDao as any,
             {
                 getAddons: jest.fn().mockResolvedValue([{ addonKey: 'com.app.a', name: 'App A' }])
             } as any,
@@ -188,6 +212,8 @@ describe('ApportionmentService', () => {
                     marketplaceTransactionId: 'mp-tx-1:li-tx-1',
                     transactionVersion: 1,
                     purchaseDate: '2026-06-15',
+                    transactionCreatedAt: '2026-06-01',
+                    transactionVersionCreatedAt: '2026-06-10',
                     actualAmount: 10,
                     addonKey: 'com.app.a',
                     hosting: 'Cloud'
@@ -211,6 +237,7 @@ describe('ApportionmentService', () => {
         };
 
         const service = new ApportionmentService(
+            {} as any,
             {} as any,
             {} as any,
             {

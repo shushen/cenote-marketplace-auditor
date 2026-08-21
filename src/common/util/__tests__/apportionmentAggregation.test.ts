@@ -12,6 +12,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                     marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     purchaseDate: '2026-06-15',
+                    transactionCreatedAt: '2026-06-01',
+                    transactionVersionCreatedAt: '2026-06-10',
                     actualAmount: 55,
                     addonKey: 'com.app.a',
                     hosting: 'Cloud'
@@ -21,6 +23,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                     marketplaceTransactionId: 'mp-tx-2',
                     transactionVersion: 6,
                     purchaseDate: '2026-06-10',
+                    transactionCreatedAt: '2026-06-01',
+                    transactionVersionCreatedAt: '2026-06-10',
                     actualAmount: 100,
                     addonKey: 'com.app.b',
                     hosting: 'Data Center'
@@ -36,6 +40,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                     marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     purchaseDate: '2026-06-15',
+                    transactionCreatedAt: '2026-06-01',
+                    transactionVersionCreatedAt: '2026-06-10',
                     actualAmount: 45,
                     addonKey: 'com.app.a',
                     hosting: 'Cloud'
@@ -51,6 +57,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                     marketplaceTransactionId: 'mp-tx-3',
                     transactionVersion: 1,
                     purchaseDate: '2027-01-05',
+                    transactionCreatedAt: '2027-01-01',
+                    transactionVersionCreatedAt: '2027-01-05',
                     actualAmount: 20,
                     addonKey: 'com.app.a',
                     hosting: 'Cloud'
@@ -86,6 +94,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                                     marketplaceTransactionId: 'mp-tx-1',
                                     transactionVersion: 2,
                                     purchaseDate: '2026-06-15',
+                                    transactionCreatedAt: '2026-06-01',
+                                    transactionVersionCreatedAt: '2026-06-10',
                                     actualAmount: 100,
                                     addonKey: 'com.app.a',
                                     hosting: 'Cloud'
@@ -99,6 +109,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                                     marketplaceTransactionId: 'mp-tx-3',
                                     transactionVersion: 1,
                                     purchaseDate: '2027-01-05',
+                                    transactionCreatedAt: '2027-01-01',
+                                    transactionVersionCreatedAt: '2027-01-05',
                                     actualAmount: 20,
                                     addonKey: 'com.app.a',
                                     hosting: 'Cloud'
@@ -121,6 +133,8 @@ describe('buildYearlyApportionmentFromMonths', () => {
                                 marketplaceTransactionId: 'mp-tx-2',
                                 transactionVersion: 6,
                                 purchaseDate: '2026-06-10',
+                                transactionCreatedAt: '2026-06-01',
+                                transactionVersionCreatedAt: '2026-06-10',
                                 actualAmount: 100,
                                 addonKey: 'com.app.b',
                                 hosting: 'Data Center'
