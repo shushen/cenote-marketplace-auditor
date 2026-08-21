@@ -1,7 +1,7 @@
 import React from 'react';
 import { ColumnConfig } from '../../components/ColumnConfig';
 import { QuoteResult, QuoteQuerySortType } from '#common/types/apiTypes.js';
-import { EntitlementIdLink } from '#client/components/styles.js';
+import { EntitlementIdLink, WrappedLabel } from '#client/components/styles.js';
 import { isoStringWithOnlyDate } from '#common/util/dateUtils.js';
 import {
     formatScheduleUserTierSummary,
@@ -48,10 +48,20 @@ function formatEntitlementSummary(quoteResult: QuoteResult): React.ReactNode {
 export const defaultQuoteColumns: ColumnConfig<QuoteResult, QuoteCellContext, QuoteQuerySortType>[] = [
     {
         id: 'quoteCreatedDate',
-        label: 'Created Date',
+        label: <WrappedLabel>Atlassian<br/>Quote Creation Date</WrappedLabel>,
         visible: true,
+        nowrap: true,
         sortField: QuoteQuerySortType.CreatedDate,
         renderSimpleCell: (quoteResult) => formatQuoteDate(quoteResult.quote.data.quoteCreatedDate),
+    },
+    {
+        id: 'createdAt',
+        label: 'Created Date',
+        visible: true,
+        nowrap: true,
+        sortField: QuoteQuerySortType.CreatedAt,
+        tooltip: 'The first time the quote was downloaded to this app',
+        renderSimpleCell: (quoteResult) => isoStringWithOnlyDate(quoteResult.quote.createdAt.toString()),
     },
     {
         id: 'updatedAt',
@@ -59,6 +69,7 @@ export const defaultQuoteColumns: ColumnConfig<QuoteResult, QuoteCellContext, Qu
         visible: true,
         nowrap: true,
         sortField: QuoteQuerySortType.UpdatedAt,
+        tooltip: 'The last time a new version of this quote was detected by this app',
         renderSimpleCell: (quoteResult) => isoStringWithOnlyDate(quoteResult.quote.updatedAt.toString()),
     },
     {

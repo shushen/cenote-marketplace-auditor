@@ -51,7 +51,7 @@ export const QuoteList: React.FC = () => {
     const [showColumnConfig, setShowColumnConfig] = useState(false);
     const [search, setSearch] = useSearchParamState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [sortBy, setSortBy] = useState<QuoteQuerySortType>(QuoteQuerySortType.CreatedDate);
+    const [sortBy, setSortBy] = useState<QuoteQuerySortType>(QuoteQuerySortType.CreatedAt);
     const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
 
     const { columns, visibleColumns, updateColumns, isLoaded } = useColumnConfig(

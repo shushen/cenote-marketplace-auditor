@@ -24,7 +24,7 @@ export class QuoteRoute {
             const params: QuoteQueryParams = {
                 start: parseInt(req.query.start as string) || 0,
                 limit: parseInt(req.query.limit as string) || 25,
-                sortBy: (req.query.sortBy as QuoteQuerySortType) || QuoteQuerySortType.CreatedDate,
+                sortBy: (req.query.sortBy as QuoteQuerySortType) || QuoteQuerySortType.CreatedAt,
                 sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC',
                 search: req.query.search as string,
             };

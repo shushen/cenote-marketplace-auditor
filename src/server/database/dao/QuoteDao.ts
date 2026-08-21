@@ -61,7 +61,7 @@ export class QuoteDao {
         const {
             start = 0,
             limit = 25,
-            sortBy = QuoteQuerySortType.CreatedDate,
+            sortBy = QuoteQuerySortType.CreatedAt,
             sortOrder = 'DESC',
             search,
         } = params;
