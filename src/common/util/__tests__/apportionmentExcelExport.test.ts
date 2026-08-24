@@ -167,8 +167,61 @@ describe('buildApportionmentExcelRows', () => {
         expect(calculateExcelColumnWidth(['App'])).toBe(10);
     });
 
-    it('sorts rows by purchase date then auditor transaction id', () => {
+    it('sorts rows by purchase date, auditor transaction id, then year', () => {
         const unsortedByAddon: YearlyApportionmentByAddon[] = [
+            {
+                addonKey: 'com.app.a',
+                addonName: 'App A',
+                byHosting: [{
+                    hosting: 'Cloud',
+                    years: [
+                        {
+                            year: '2027',
+                            actualValue: 50,
+                            transactions: [{
+                                transactionId: 'tx-4',
+                                auditorTransactionId: 'mp-tx-a',
+                                marketplaceTransactionId: 'AT-1004',
+                                appEntitlementId: 'entitlement-4',
+                                transactionVersion: 1,
+                                purchaseDate: '2026-06-15',
+                                saleType: 'Renewal',
+                                entitlementNumber: 'SEN-1004',
+                                company: 'Acme Corp',
+                                maintenanceStartDate: '2027-01-01',
+                                maintenanceEndDate: '2028-01-01',
+                                transactionCreatedAt: '2027-01-01',
+                                transactionVersionCreatedAt: '2027-01-05',
+                                actualAmount: 50,
+                                addonKey: 'com.app.a',
+                                hosting: 'Cloud'
+                            }]
+                        },
+                        {
+                            year: '2026',
+                            actualValue: 100,
+                            transactions: [{
+                                transactionId: 'tx-1',
+                                auditorTransactionId: 'mp-tx-a',
+                                marketplaceTransactionId: 'AT-1001',
+                                appEntitlementId: 'entitlement-1',
+                                transactionVersion: 2,
+                                purchaseDate: '2026-06-15',
+                                saleType: 'New',
+                                entitlementNumber: 'SEN-1001',
+                                company: 'Acme Corp',
+                                maintenanceStartDate: '2026-01-01',
+                                maintenanceEndDate: '2027-01-01',
+                                transactionCreatedAt: '2026-06-01',
+                                transactionVersionCreatedAt: '2026-06-10',
+                                actualAmount: 100,
+                                addonKey: 'com.app.a',
+                                hosting: 'Cloud'
+                            }]
+                        }
+                    ]
+                }]
+            },
             {
                 addonKey: 'com.app.b',
                 addonName: 'App B',
@@ -205,45 +258,25 @@ describe('buildApportionmentExcelRows', () => {
                     hosting: 'Cloud',
                     years: [{
                         year: '2026',
-                        actualValue: 200,
-                        transactions: [
-                            {
-                                transactionId: 'tx-3',
-                                auditorTransactionId: 'mp-tx-b',
-                                marketplaceTransactionId: 'AT-1003',
-                                appEntitlementId: 'entitlement-3',
-                                transactionVersion: 1,
-                                purchaseDate: '2026-06-15',
-                                saleType: 'New',
-                                entitlementNumber: 'SEN-1003',
-                                company: 'Acme Corp',
-                                maintenanceStartDate: '2026-01-01',
-                                maintenanceEndDate: '2027-01-01',
-                                transactionCreatedAt: '2026-06-01',
-                                transactionVersionCreatedAt: '2026-06-10',
-                                actualAmount: 100,
-                                addonKey: 'com.app.a',
-                                hosting: 'Cloud'
-                            },
-                            {
-                                transactionId: 'tx-1',
-                                auditorTransactionId: 'mp-tx-a',
-                                marketplaceTransactionId: 'AT-1001',
-                                appEntitlementId: 'entitlement-1',
-                                transactionVersion: 2,
-                                purchaseDate: '2026-06-15',
-                                saleType: 'New',
-                                entitlementNumber: 'SEN-1001',
-                                company: 'Acme Corp',
-                                maintenanceStartDate: '2026-01-01',
-                                maintenanceEndDate: '2027-01-01',
-                                transactionCreatedAt: '2026-06-01',
-                                transactionVersionCreatedAt: '2026-06-10',
-                                actualAmount: 100,
-                                addonKey: 'com.app.a',
-                                hosting: 'Cloud'
-                            }
-                        ]
+                        actualValue: 100,
+                        transactions: [{
+                            transactionId: 'tx-3',
+                            auditorTransactionId: 'mp-tx-b',
+                            marketplaceTransactionId: 'AT-1003',
+                            appEntitlementId: 'entitlement-3',
+                            transactionVersion: 1,
+                            purchaseDate: '2026-06-15',
+                            saleType: 'New',
+                            entitlementNumber: 'SEN-1003',
+                            company: 'Acme Corp',
+                            maintenanceStartDate: '2026-01-01',
+                            maintenanceEndDate: '2027-01-01',
+                            transactionCreatedAt: '2026-06-01',
+                            transactionVersionCreatedAt: '2026-06-10',
+                            actualAmount: 100,
+                            addonKey: 'com.app.a',
+                            hosting: 'Cloud'
+                        }]
                     }]
                 }]
             }
@@ -251,10 +284,11 @@ describe('buildApportionmentExcelRows', () => {
 
         const rows = buildApportionmentExcelRows(unsortedByAddon);
 
-        expect(rows.map(row => [row[13], row[9]])).toEqual([
-            ['2026-06-15', 'mp-tx-a'],
-            ['2026-06-15', 'mp-tx-b'],
-            ['2026-06-20', 'mp-tx-z']
+        expect(rows.map(row => [row[13], row[9], row[2]])).toEqual([
+            ['2026-06-15', 'mp-tx-a', '2026'],
+            ['2026-06-15', 'mp-tx-a', '2027'],
+            ['2026-06-15', 'mp-tx-b', '2026'],
+            ['2026-06-20', 'mp-tx-z', '2026']
         ]);
     });
 });

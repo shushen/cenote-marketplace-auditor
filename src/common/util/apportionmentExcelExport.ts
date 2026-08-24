@@ -33,6 +33,7 @@ export const APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES = {
 
 export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
     app: 0,
+    year: 2,
     transactionId: 8,
     auditorTransactionId: 9,
     marketplaceTransactionId: 10,
@@ -40,7 +41,7 @@ export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
 } as const;
 
 export function sortApportionmentExcelRows(rows: ApportionmentExcelRow[]): ApportionmentExcelRow[] {
-    const { purchaseDate, auditorTransactionId } = APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES;
+    const { year, purchaseDate, auditorTransactionId } = APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES;
 
     return [...rows].sort((a, b) => {
         const purchaseDateCompare = a[purchaseDate].localeCompare(b[purchaseDate]);
@@ -48,7 +49,12 @@ export function sortApportionmentExcelRows(rows: ApportionmentExcelRow[]): Appor
             return purchaseDateCompare;
         }
 
-        return a[auditorTransactionId].localeCompare(b[auditorTransactionId]);
+        const auditorTransactionIdCompare = a[auditorTransactionId].localeCompare(b[auditorTransactionId]);
+        if (auditorTransactionIdCompare !== 0) {
+            return auditorTransactionIdCompare;
+        }
+
+        return a[year].localeCompare(b[year]);
     });
 }
 
