@@ -35,8 +35,22 @@ export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
     app: 0,
     transactionId: 8,
     auditorTransactionId: 9,
-    marketplaceTransactionId: 10
+    marketplaceTransactionId: 10,
+    purchaseDate: 13
 } as const;
+
+export function sortApportionmentExcelRows(rows: ApportionmentExcelRow[]): ApportionmentExcelRow[] {
+    const { purchaseDate, auditorTransactionId } = APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES;
+
+    return [...rows].sort((a, b) => {
+        const purchaseDateCompare = a[purchaseDate].localeCompare(b[purchaseDate]);
+        if (purchaseDateCompare !== 0) {
+            return purchaseDateCompare;
+        }
+
+        return a[auditorTransactionId].localeCompare(b[auditorTransactionId]);
+    });
+}
 
 export type ApportionmentExcelRow = [
     string,
@@ -91,7 +105,7 @@ export function buildApportionmentExcelRows(byAddon: YearlyApportionmentByAddon[
         }
     }
 
-    return rows;
+    return sortApportionmentExcelRows(rows);
 }
 
 export function collectApportionmentColumnStrings(
