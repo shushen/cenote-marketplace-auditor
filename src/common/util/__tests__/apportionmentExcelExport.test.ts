@@ -20,7 +20,9 @@ describe('buildApportionmentExcelRows', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-1',
-                                marketplaceTransactionId: 'mp-tx-1',
+                                auditorTransactionId: 'mp-tx-1',
+                                marketplaceTransactionId: 'AT-1001',
+                                appEntitlementId: 'entitlement-1',
                                 transactionVersion: 2,
                                 purchaseDate: '2026-06-15',
                                 saleType: 'New',
@@ -49,7 +51,9 @@ describe('buildApportionmentExcelRows', () => {
                         actualValue: 50,
                         transactions: [{
                             transactionId: 'tx-2',
-                            marketplaceTransactionId: 'mp-tx-2',
+                            auditorTransactionId: 'mp-tx-2',
+                            marketplaceTransactionId: 'AT-1002',
+                            appEntitlementId: 'entitlement-2',
                             transactionVersion: 1,
                             purchaseDate: '2026-06-20',
                             saleType: 'Renewal',
@@ -82,6 +86,8 @@ describe('buildApportionmentExcelRows', () => {
                 '2027-01-01',
                 'tx-1',
                 'mp-tx-1',
+                'AT-1001',
+                'entitlement-1',
                 2,
                 '2026-06-15',
                 '2026-06-01',
@@ -99,6 +105,8 @@ describe('buildApportionmentExcelRows', () => {
                 '2027-06-01',
                 'tx-2',
                 'mp-tx-2',
+                'AT-1002',
+                'entitlement-2',
                 1,
                 '2026-06-20',
                 '2026-06-02',
@@ -119,7 +127,9 @@ describe('buildApportionmentExcelRows', () => {
             'Maintenance Start Date',
             'Maintenance End Date',
             'Transaction ID',
+            'Auditor Transaction ID',
             'Marketplace Transaction ID',
+            'App Entitlement ID',
             'Transaction Version',
             'Purchase Date',
             'Transaction Creation Date',
@@ -141,14 +151,16 @@ describe('buildApportionmentExcelRows', () => {
                 '2026-01-01',
                 '2027-01-01',
                 'tx-1',
+                'mp-tx-1',
                 'mp-transaction-with-a-long-id',
+                'entitlement-1',
                 1,
                 '2026-06-15',
                 '2026-06-01',
                 '2026-06-10',
                 10
             ]],
-            9
+            10
         );
 
         expect(calculateExcelColumnWidth(values)).toBe(31);

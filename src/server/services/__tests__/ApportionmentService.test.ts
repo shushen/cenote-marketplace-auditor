@@ -15,6 +15,8 @@ describe('ApportionmentService', () => {
         currentVersion: version,
         data: {
             addonKey: opts.addonKey,
+            transactionId: `AT-${id}`,
+            appEntitlementId: `entitlement-${id}`,
             customerDetails: {
                 company: 'Acme Corp'
             },
@@ -91,7 +93,9 @@ describe('ApportionmentService', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-1',
-                                marketplaceTransactionId: 'mp-tx-1:li-tx-1',
+                                marketplaceTransactionId: 'AT-tx-1',
+                                appEntitlementId: 'entitlement-tx-1',
+                                auditorTransactionId: 'mp-tx-1:li-tx-1',
                                 transactionVersion: 2,
                                 purchaseDate: '2026-06-15',
                                 saleType: 'New',
@@ -120,7 +124,9 @@ describe('ApportionmentService', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-2',
-                                marketplaceTransactionId: 'mp-tx-2:li-tx-2',
+                                marketplaceTransactionId: 'AT-tx-2',
+                                appEntitlementId: 'entitlement-tx-2',
+                                auditorTransactionId: 'mp-tx-2:li-tx-2',
                                 transactionVersion: 6,
                                 purchaseDate: '2026-06-15',
                                 saleType: 'New',
@@ -146,7 +152,9 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
-                        marketplaceTransactionId: 'mp-tx-1:li-tx-1',
+                        marketplaceTransactionId: 'AT-tx-1',
+                        appEntitlementId: 'entitlement-tx-1',
+                        auditorTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
                         saleType: 'New',
@@ -162,7 +170,9 @@ describe('ApportionmentService', () => {
                     },
                     {
                         transactionId: 'tx-2',
-                        marketplaceTransactionId: 'mp-tx-2:li-tx-2',
+                        marketplaceTransactionId: 'AT-tx-2',
+                        appEntitlementId: 'entitlement-tx-2',
+                        auditorTransactionId: 'mp-tx-2:li-tx-2',
                         transactionVersion: 6,
                         purchaseDate: '2026-06-15',
                         saleType: 'New',
@@ -184,7 +194,9 @@ describe('ApportionmentService', () => {
                 transactions: [
                     {
                         transactionId: 'tx-1',
-                        marketplaceTransactionId: 'mp-tx-1:li-tx-1',
+                        marketplaceTransactionId: 'AT-tx-1',
+                        appEntitlementId: 'entitlement-tx-1',
+                        auditorTransactionId: 'mp-tx-1:li-tx-1',
                         transactionVersion: 2,
                         purchaseDate: '2026-06-15',
                         saleType: 'New',
@@ -241,7 +253,9 @@ describe('ApportionmentService', () => {
                 actualValue: 10,
                 transactions: [{
                     transactionId: 'tx-1',
-                    marketplaceTransactionId: 'mp-tx-1:li-tx-1',
+                    marketplaceTransactionId: 'AT-tx-1',
+                    appEntitlementId: 'entitlement-tx-1',
+                    auditorTransactionId: 'mp-tx-1:li-tx-1',
                     transactionVersion: 1,
                     purchaseDate: '2026-06-15',
                     saleType: 'New',

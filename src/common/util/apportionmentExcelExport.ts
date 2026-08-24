@@ -10,7 +10,9 @@ export const APPORTIONMENT_EXCEL_HEADERS = [
     'Maintenance Start Date',
     'Maintenance End Date',
     'Transaction ID',
+    'Auditor Transaction ID',
     'Marketplace Transaction ID',
+    'App Entitlement ID',
     'Transaction Version',
     'Purchase Date',
     'Transaction Creation Date',
@@ -24,17 +26,21 @@ export const APPORTIONMENT_EXCEL_ACCOUNTING_NUM_FMT =
 export const APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES = {
     app: 1,
     transactionId: 9,
-    marketplaceTransactionId: 10,
-    actualAmount: 15
+    auditorTransactionId: 10,
+    marketplaceTransactionId: 11,
+    actualAmount: 17
 } as const;
 
 export const APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES = {
     app: 0,
     transactionId: 8,
-    marketplaceTransactionId: 9
+    auditorTransactionId: 9,
+    marketplaceTransactionId: 10
 } as const;
 
 export type ApportionmentExcelRow = [
+    string,
+    string,
     string,
     string,
     string,
@@ -71,7 +77,9 @@ export function buildApportionmentExcelRows(byAddon: YearlyApportionmentByAddon[
                         transaction.maintenanceStartDate,
                         transaction.maintenanceEndDate,
                         transaction.transactionId,
+                        transaction.auditorTransactionId,
                         transaction.marketplaceTransactionId,
+                        transaction.appEntitlementId,
                         transaction.transactionVersion,
                         transaction.purchaseDate,
                         transaction.transactionCreatedAt,

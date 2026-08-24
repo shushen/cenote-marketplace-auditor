@@ -48,6 +48,10 @@ function applyDataSheetFormatting(
             rowIndex: APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES.transactionId
         },
         {
+            columnIndex: APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES.auditorTransactionId,
+            rowIndex: APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES.auditorTransactionId
+        },
+        {
             columnIndex: APPORTIONMENT_EXCEL_AUTO_FIT_COLUMN_INDEXES.marketplaceTransactionId,
             rowIndex: APPORTIONMENT_EXCEL_AUTO_FIT_ROW_INDEXES.marketplaceTransactionId
         }

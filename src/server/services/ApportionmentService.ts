@@ -104,9 +104,11 @@ export class ApportionmentService {
                 aggregate.actualValue += entry.actualValue;
                 aggregate.transactions.push({
                     transactionId: transaction.id,
-                    marketplaceTransactionId: formatMarketplaceTransactionIdForDisplay(
+                    auditorTransactionId: formatMarketplaceTransactionIdForDisplay(
                         transaction.marketplaceTransactionId
                     ),
+                    marketplaceTransactionId: transaction.data.transactionId ?? '',
+                    appEntitlementId: transaction.data.appEntitlementId ?? '',
                     transactionVersion: transaction.currentVersion,
                     purchaseDate,
                     saleType,

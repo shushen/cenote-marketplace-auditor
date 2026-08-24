@@ -2,6 +2,9 @@ import { buildYearlyApportionmentFromMonths } from '../apportionmentAggregation.
 import { MonthlyAggregateApportionmentEntry } from '#common/types/apportionment.js';
 
 const defaultTransactionFields = {
+    auditorTransactionId: 'mp-tx-1',
+    marketplaceTransactionId: 'AT-1001',
+    appEntitlementId: 'entitlement-1',
     saleType: 'New',
     entitlementNumber: 'SEN-1001',
     company: 'Acme Corp',
@@ -17,7 +20,6 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-1',
-                    marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     purchaseDate: '2026-06-15',
                     ...defaultTransactionFields,
@@ -29,10 +31,12 @@ describe('buildYearlyApportionmentFromMonths', () => {
                 },
                 {
                     transactionId: 'tx-2',
-                    marketplaceTransactionId: 'mp-tx-2',
                     transactionVersion: 6,
                     purchaseDate: '2026-06-10',
                     ...defaultTransactionFields,
+                    auditorTransactionId: 'mp-tx-2',
+                    marketplaceTransactionId: 'AT-1002',
+                    appEntitlementId: 'entitlement-2',
                     entitlementNumber: 'SEN-1002',
                     transactionCreatedAt: '2026-06-01',
                     transactionVersionCreatedAt: '2026-06-10',
@@ -48,7 +52,6 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-1',
-                    marketplaceTransactionId: 'mp-tx-1',
                     transactionVersion: 2,
                     purchaseDate: '2026-06-15',
                     ...defaultTransactionFields,
@@ -66,10 +69,12 @@ describe('buildYearlyApportionmentFromMonths', () => {
             transactions: [
                 {
                     transactionId: 'tx-3',
-                    marketplaceTransactionId: 'mp-tx-3',
                     transactionVersion: 1,
                     purchaseDate: '2027-01-05',
                     ...defaultTransactionFields,
+                    auditorTransactionId: 'mp-tx-3',
+                    marketplaceTransactionId: 'AT-1003',
+                    appEntitlementId: 'entitlement-3',
                     entitlementNumber: 'SEN-1003',
                     maintenanceStartDate: '2027-01-01',
                     maintenanceEndDate: '2028-01-01',
@@ -107,7 +112,6 @@ describe('buildYearlyApportionmentFromMonths', () => {
                                 actualValue: 100,
                                 transactions: [{
                                     transactionId: 'tx-1',
-                                    marketplaceTransactionId: 'mp-tx-1',
                                     transactionVersion: 2,
                                     purchaseDate: '2026-06-15',
                                     ...defaultTransactionFields,
@@ -123,10 +127,12 @@ describe('buildYearlyApportionmentFromMonths', () => {
                                 actualValue: 20,
                                 transactions: [{
                                     transactionId: 'tx-3',
-                                    marketplaceTransactionId: 'mp-tx-3',
                                     transactionVersion: 1,
                                     purchaseDate: '2027-01-05',
                                     ...defaultTransactionFields,
+                                    auditorTransactionId: 'mp-tx-3',
+                                    marketplaceTransactionId: 'AT-1003',
+                                    appEntitlementId: 'entitlement-3',
                                     entitlementNumber: 'SEN-1003',
                                     maintenanceStartDate: '2027-01-01',
                                     maintenanceEndDate: '2028-01-01',
@@ -151,10 +157,12 @@ describe('buildYearlyApportionmentFromMonths', () => {
                             actualValue: 100,
                             transactions: [{
                                 transactionId: 'tx-2',
-                                marketplaceTransactionId: 'mp-tx-2',
                                 transactionVersion: 6,
                                 purchaseDate: '2026-06-10',
                                 ...defaultTransactionFields,
+                                auditorTransactionId: 'mp-tx-2',
+                                marketplaceTransactionId: 'AT-1002',
+                                appEntitlementId: 'entitlement-2',
                                 entitlementNumber: 'SEN-1002',
                                 transactionCreatedAt: '2026-06-01',
                                 transactionVersionCreatedAt: '2026-06-10',
