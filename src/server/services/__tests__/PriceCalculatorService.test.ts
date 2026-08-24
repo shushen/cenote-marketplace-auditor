@@ -923,5 +923,48 @@ describe('PriceCalculatorService', () => {
             expect(months).toHaveLength(12);
             expect(months.every(entry => entry.estimatedValue === 0 && entry.actualValue === 0)).toBe(true);
         });
+
+        it('assigns the full amount to the start month for a 0-day license', () => {
+            const pricingOpts = {
+                pricingTierResult: dataCenterPricingTierResult,
+                saleDate: '2026-07-30',
+                saleType: 'Renewal' as const,
+                isSandbox: false,
+                hosting: 'Data Center' as const,
+                licenseType: 'COMMERCIAL' as const,
+                tier: '1000 Users',
+                maintenanceStartDate: '2027-10-07',
+                maintenanceEndDate: '2027-10-07',
+                billingPeriod: 'Annual' as const,
+                declaredPartnerDiscount: 0,
+                parentProduct: 'confluence'
+            };
+
+            const months = service.calculateMonthlyPriceApportionment({
+                pricingOpts,
+                expectedVendorAmount: 0,
+                actualVendorAmount: 7.3
+            });
+
+            expect(months).toEqual([
+                { month: '2027-10', estimatedValue: 0, actualValue: 7.3 }
+            ]);
+        });
+
+        it('returns no months for a 0-day license with no vendor amount', () => {
+            const pricingOpts = {
+                ...baseAnnualOpts,
+                maintenanceStartDate: '2027-10-07',
+                maintenanceEndDate: '2027-10-07'
+            };
+
+            const months = service.calculateMonthlyPriceApportionment({
+                pricingOpts,
+                expectedVendorAmount: 0,
+                actualVendorAmount: 0
+            });
+
+            expect(months).toEqual([]);
+        });
     });
 });

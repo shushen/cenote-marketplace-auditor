@@ -182,7 +182,14 @@ export class PriceCalculatorService {
         const months = getMonthsInDateRange(maintenanceStartDate, maintenanceEndDate);
 
         if (months.length === 0) {
-            return [];
+            // Atlassian sometimes emits 0-day line items (start === end) that still
+            // carry a vendor amount. There are no days to weight, so put the full
+            // amount in the maintenance start month rather than dropping it.
+            return this.apportionUndistributableAmount({
+                month: maintenanceStartDate.substring(0, 7),
+                expectedVendorAmount,
+                actualVendorAmount
+            });
         }
 
         const { isFreeLicense } = this.isFreeLicense(pricingOpts);
@@ -341,6 +348,28 @@ export class PriceCalculatorService {
         this.adjustRoundedAmountRemainder(entries, 'actualValue', actualVendorAmount);
 
         return entries;
+    }
+
+    /**
+     * When a license has no calendar months to weight (0-day start===end), the
+     * actual/expected amounts still need a reporting bin.
+     */
+    private apportionUndistributableAmount(opts: {
+        month: string;
+        expectedVendorAmount: number;
+        actualVendorAmount: number;
+    }): TransactionMonthlyApportionmentEntry[] {
+        const { month, expectedVendorAmount, actualVendorAmount } = opts;
+
+        if (expectedVendorAmount === 0 && actualVendorAmount === 0) {
+            return [];
+        }
+
+        return [{
+            month,
+            estimatedValue: Math.round(expectedVendorAmount * 100) / 100,
+            actualValue: Math.round(actualVendorAmount * 100) / 100
+        }];
     }
 
     private adjustRoundedAmountRemainder(
