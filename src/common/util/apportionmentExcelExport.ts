@@ -11,7 +11,7 @@ export const APPORTIONMENT_EXCEL_HEADERS = [
     'Maintenance End Date',
     'Transaction ID',
     'Auditor Transaction ID',
-    'Marketplace Transaction ID',
+    'Marketplace Invoice',
     'App Entitlement ID',
     'Transaction Version',
     'Purchase Date',

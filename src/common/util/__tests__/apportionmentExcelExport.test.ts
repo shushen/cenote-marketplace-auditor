@@ -128,7 +128,7 @@ describe('buildApportionmentExcelRows', () => {
             'Maintenance End Date',
             'Transaction ID',
             'Auditor Transaction ID',
-            'Marketplace Transaction ID',
+            'Marketplace Invoice',
             'App Entitlement ID',
             'Transaction Version',
             'Purchase Date',
@@ -140,7 +140,7 @@ describe('buildApportionmentExcelRows', () => {
 
     it('sizes columns from the widest header or cell value', () => {
         const values = collectApportionmentColumnStrings(
-            'Marketplace Transaction ID',
+            'Marketplace Invoice',
             [[
                 'App A',
                 'Cloud',
