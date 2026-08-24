@@ -100,6 +100,10 @@ export async function exportApportionmentExcel(opts: {
         metric: 'sum'
     });
 
+    (pivotSheet as { orderNo?: number }).orderNo = 1;
+    (dataSheet as { orderNo?: number }).orderNo = 2;
+    workbook.views = [{ activeTab: 0, firstSheet: 0 }];
+
     const buffer = await workbook.xlsx.writeBuffer();
     downloadBlob(
         new Blob([buffer], {
