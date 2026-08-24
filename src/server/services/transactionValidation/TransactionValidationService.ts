@@ -66,15 +66,19 @@ export class TransactionValidationService {
                 expectedDiscountForPreviousPurchase = await this.transactionAdjustmentValidationService.calculateFinalExpectedDiscountForTransaction(previousPurchaseFindResult.transaction);
             }
         } else if (saleType==='Refund') {
-            // For a refund, the "previous" for overlap pricing is the license that was active when the
-            // refunded purchase was made (the one it overlapped with). Find the transaction being refunded,
-            // then find that transaction's previous transaction.
+            // Overlap pricing applies only when the refunded purchase was itself an upgrade
+            // or downgrade (refund of the differential). Cancelled renewals/new purchases are a
+            // straight negation; treating a sibling invoice line as "previous" would mis-weight
+            // apportionment (near-zero overlap months, then the full credit in later months).
             const refundedTx = await this.previousTransactionService.findRefundedTransaction(transaction);
             if (refundedTx) {
                 const isUpgradePair = await this.previousTransactionService.isRefundPartOfUpgradePair(transaction);
-                previousPurchaseFindResult = await this.previousTransactionService.findPreviousTransaction(refundedTx);
-                if (previousPurchaseFindResult) {
-                    expectedDiscountForPreviousPurchase = await this.transactionAdjustmentValidationService.calculateFinalExpectedDiscountForTransaction(previousPurchaseFindResult.transaction);
+                const refundedSaleType = refundedTx.data.purchaseDetails.saleType;
+                if (refundedSaleType === 'Upgrade' || refundedSaleType === 'Downgrade') {
+                    previousPurchaseFindResult = await this.previousTransactionService.findPreviousTransaction(refundedTx);
+                    if (previousPurchaseFindResult) {
+                        expectedDiscountForPreviousPurchase = await this.transactionAdjustmentValidationService.calculateFinalExpectedDiscountForTransaction(previousPurchaseFindResult.transaction);
+                    }
                 }
 
                 // Standalone refund: partner payout ratio should track the original refunded sale date.

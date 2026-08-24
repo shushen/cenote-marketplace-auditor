@@ -82,6 +82,7 @@ describe('TransactionValidationService refund discount reference date', () => {
         expect(transactionValidator.validateOneTransaction).toHaveBeenCalled();
         const firstCallOpts = transactionValidator.validateOneTransaction.mock.calls[0][0];
         expect(firstCallOpts.discountReferenceSaleDate).toBe('2026-03-15');
+        expect(previousTransactionService.findPreviousTransaction).not.toHaveBeenCalled();
     });
 
     it('does not override discount reference date for paired refunds', async () => {
@@ -120,5 +121,43 @@ describe('TransactionValidationService refund discount reference date', () => {
         expect(transactionValidator.validateOneTransaction).toHaveBeenCalled();
         const firstCallOpts = transactionValidator.validateOneTransaction.mock.calls[0][0];
         expect(firstCallOpts.discountReferenceSaleDate).toBeUndefined();
+    });
+
+    it('looks up previous purchase for overlap when the refunded transaction is an upgrade', async () => {
+        const transactionSandboxService = { isTransactionForSandbox: jest.fn().mockResolvedValue(false) } as any;
+        const transactionAdjustmentValidationService = {
+            calculateFinalExpectedDiscountForTransaction: jest.fn().mockResolvedValue(makeDiscountResult())
+        } as any;
+        const transactionValidator = {
+            validateOneTransaction: jest.fn().mockResolvedValue(makeValidationResult())
+        } as any;
+
+        const refundedTx = makeTransaction('2026-03-15', 'Upgrade');
+        const previousPurchaseFindResult: PreviousTransactionResult = {
+            transaction: makeTransaction('2025-12-01', 'New'),
+            effectiveMaintenanceEndDate: '2026-05-01'
+        };
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(refundedTx),
+            findPreviousTransaction: jest.fn().mockResolvedValue(previousPurchaseFindResult),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(false),
+            findParentTransactionForProratedTransaction: jest.fn()
+        } as any;
+
+        const service = new TransactionValidationService(
+            transactionSandboxService,
+            transactionAdjustmentValidationService,
+            transactionValidator,
+            previousTransactionService
+        );
+
+        await service.validateTransaction({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            pricing: { expertDiscountOptOut: false } as any
+        });
+
+        expect(previousTransactionService.findPreviousTransaction).toHaveBeenCalledWith(refundedTx);
+        expect(transactionAdjustmentValidationService.calculateFinalExpectedDiscountForTransaction)
+            .toHaveBeenCalledWith(previousPurchaseFindResult.transaction);
     });
 });

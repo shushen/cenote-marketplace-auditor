@@ -151,10 +151,16 @@ export class PreviousTransactionService {
             t.data.purchaseDetails.tier === refundTier
         );
 
+        const refundLineItemId = refundTransaction.data.transactionLineItemId;
+        const lineItemMatches = refundLineItemId
+            ? refundedTxs.filter(t => t.data.transactionLineItemId === refundLineItemId)
+            : [];
+        const candidates = lineItemMatches.length > 0 ? lineItemMatches : refundedTxs;
+
         let bestMatch: Transaction | undefined;
         let maxOverlap = 0;
 
-        for (const refundedTx of refundedTxs) {
+        for (const refundedTx of candidates) {
             const overlapStart = Math.max(new Date(refundStart).getTime(), new Date(refundedTx.data.purchaseDetails.maintenanceStartDate).getTime());
             const overlapEnd = Math.min(new Date(refundEnd).getTime(), new Date(refundedTx.data.purchaseDetails.maintenanceEndDate).getTime());
             const overlap = overlapEnd - overlapStart;

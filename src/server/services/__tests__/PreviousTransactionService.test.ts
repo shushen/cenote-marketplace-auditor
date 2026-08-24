@@ -366,7 +366,34 @@ describe('PreviousTransactionService', () => {
         });
     });
 
-    describe('isRefundPartOfUpgradePair', () => {
+    describe('findRefundedTransaction', () => {
+        it('prefers the purchase with a matching transaction line item id', async () => {
+            const firstSlice = createTransaction('2026-10-07', '2027-02-02', '2026-07-30', 'Renewal', '1000 Users');
+            firstSlice.data.transactionLineItemId = 'line-first';
+            const secondSlice = createTransaction('2027-02-02', '2027-10-07', '2026-07-30', 'Renewal', '1000 Users');
+            secondSlice.data.transactionLineItemId = 'line-second';
+            const refund = createTransaction('2026-10-07', '2027-10-07', '2026-07-31', 'Refund', '1000 Users');
+            refund.data.transactionLineItemId = 'line-first';
+
+            transactionDao.loadRelatedTransactions.mockResolvedValue([refund, secondSlice, firstSlice]);
+
+            const result = await service.findRefundedTransaction(refund);
+
+            expect(result?.id).toBe(firstSlice.id);
+        });
+
+        it('falls back to the purchase with the longest overlapping maintenance period', async () => {
+            const firstSlice = createTransaction('2026-10-07', '2027-02-02', '2026-07-30', 'Renewal', '1000 Users');
+            const secondSlice = createTransaction('2027-02-02', '2027-10-07', '2026-07-30', 'Renewal', '1000 Users');
+            const refund = createTransaction('2026-10-07', '2027-10-07', '2026-07-31', 'Refund', '1000 Users');
+
+            transactionDao.loadRelatedTransactions.mockResolvedValue([refund, secondSlice, firstSlice]);
+
+            const result = await service.findRefundedTransaction(refund);
+
+            expect(result?.id).toBe(secondSlice.id);
+        });
+    });
         it('returns true for refund + upgrade on same date and maintenance period with different tiers', async () => {
             const refund = createTransaction('2025-06-01', '2025-12-01', '2025-06-01', 'Refund', '500 Users');
             const upgrade = createTransaction('2025-06-01', '2025-12-01', '2025-06-01', 'Upgrade', '1000 Users');

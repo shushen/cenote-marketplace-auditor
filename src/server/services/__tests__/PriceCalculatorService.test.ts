@@ -966,5 +966,40 @@ describe('PriceCalculatorService', () => {
 
             expect(months).toEqual([]);
         });
+
+        it('apportions a cancelled-purchase refund by calendar days with no positive months', () => {
+            const pricingOpts = {
+                pricingTierResult: dataCenterPricingTierResult,
+                saleDate: '2026-07-31',
+                saleType: 'Refund' as const,
+                isSandbox: false,
+                hosting: 'Data Center' as const,
+                licenseType: 'COMMERCIAL' as const,
+                tier: '1000 Users',
+                maintenanceStartDate: '2026-10-07',
+                maintenanceEndDate: '2027-10-07',
+                billingPeriod: 'Annual' as const,
+                declaredPartnerDiscount: 0,
+                parentProduct: 'confluence'
+            };
+
+            const months = service.calculateMonthlyPriceApportionment({
+                pricingOpts,
+                expectedVendorAmount: -4049.97,
+                actualVendorAmount: -4049.97
+            });
+
+            const total2026 = months
+                .filter(entry => entry.month.startsWith('2026'))
+                .reduce((sum, entry) => sum + entry.actualValue, 0);
+            const total2027 = months
+                .filter(entry => entry.month.startsWith('2027'))
+                .reduce((sum, entry) => sum + entry.actualValue, 0);
+
+            expect(months.every(entry => entry.actualValue <= 0)).toBe(true);
+            expect(total2026).toBeCloseTo(-954.24, 2);
+            expect(total2027).toBeCloseTo(-3095.73, 2);
+            expect(total2026 + total2027).toBeCloseTo(-4049.97, 2);
+        });
     });
 });
