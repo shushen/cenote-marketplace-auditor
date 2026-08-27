@@ -9,7 +9,7 @@ import { EXPECTED_DISCOUNT_PERMUTATIONS_WITH_ACTUAL_ADJUSTMENTS, EXPECTED_DISCOU
 import { TransactionSandboxService } from './TransactionSandboxService.js';
 import { TransactionAdjustmentValidationService } from './TransactionAdjustmentValidationService.js';
 import { TransactionValidator } from './TransactionValidator.js';
-import { ALERT_DAYS_AFTER_PRICING_CHANGE } from './constants.js';
+import { ALERT_DAYS_AFTER_PRICING_CHANGE, ALERT_DAYS_AFTER_PURCHASE_FOR_REFUND } from './constants.js';
 import { PreviousTransactionService } from '../PreviousTransactionService.js';
 import { PreviousTransactionResult } from '#server/services/types.js';
 import { sumDiscountArrayForTransaction } from '#common/util/transactionDiscounts.js';
@@ -212,6 +212,24 @@ export class TransactionValidationService {
             if (days > ALERT_DAYS_AFTER_PRICING_CHANGE) {
                 validationResult.notes.push(`Legacy pricing was still applied more than ${ALERT_DAYS_AFTER_PRICING_CHANGE} days after pricing change on ${legacyPricingEndDate}`);
                 validationResult.valid = false;
+            }
+        }
+
+        if (transaction.data.purchaseDetails.saleType === 'Refund') {
+            const isUpgradePair = await this.previousTransactionService.isRefundPartOfUpgradePair(transaction);
+            if (!isUpgradePair) {
+                const refundedTx = await this.previousTransactionService.findRefundedTransaction(transaction);
+                if (refundedTx) {
+                    const originalSaleDate = refundedTx.data.purchaseDetails.saleDate;
+                    const daysSincePurchase = dateDiff(originalSaleDate, transaction.data.purchaseDetails.saleDate);
+
+                    if (daysSincePurchase > ALERT_DAYS_AFTER_PURCHASE_FOR_REFUND) {
+                        validationResult.notes.push(
+                            `Refund is for a purchase made more than ${ALERT_DAYS_AFTER_PURCHASE_FOR_REFUND} days ago (original sale date ${originalSaleDate})`
+                        );
+                        validationResult.valid = false;
+                    }
+                }
             }
         }
 

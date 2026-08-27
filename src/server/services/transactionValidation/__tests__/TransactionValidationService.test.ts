@@ -161,3 +161,125 @@ describe('TransactionValidationService refund discount reference date', () => {
             .toHaveBeenCalledWith(previousPurchaseFindResult.transaction);
     });
 });
+
+describe('TransactionValidationService late refund exception', () => {
+    const makeService = (previousTransactionService: any) => {
+        const transactionSandboxService = { isTransactionForSandbox: jest.fn() } as any;
+        const transactionAdjustmentValidationService = {
+            calculateFinalExpectedDiscountForTransaction: jest.fn()
+        } as any;
+        const transactionValidator = { validateOneTransaction: jest.fn() } as any;
+
+        return new TransactionValidationService(
+            transactionSandboxService,
+            transactionAdjustmentValidationService,
+            transactionValidator,
+            previousTransactionService
+        );
+    };
+
+    it('flags a standalone refund of a purchase made more than 30 days ago', async () => {
+        const refundedTx = makeTransaction('2026-03-15', 'New');
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(refundedTx),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(false)
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(false);
+        expect(result?.notes).toContain(
+            'Refund is for a purchase made more than 30 days ago (original sale date 2026-03-15)'
+        );
+    });
+
+    it('does not flag a refund of a purchase made exactly 30 days ago', async () => {
+        const refundedTx = makeTransaction('2026-04-10', 'New');
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(refundedTx),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(false)
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(true);
+        expect(result?.notes).toEqual([]);
+    });
+
+    it('does not flag a refund of a purchase made fewer than 30 days ago', async () => {
+        const refundedTx = makeTransaction('2026-04-20', 'New');
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(refundedTx),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(false)
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(true);
+        expect(result?.notes).toEqual([]);
+    });
+
+    it('does not flag an upgrade-pair refund even if the original purchase is older than 30 days', async () => {
+        const refundedTx = makeTransaction('2026-01-01', 'New');
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(refundedTx),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(true)
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(true);
+        expect(result?.notes).toEqual([]);
+        expect(previousTransactionService.findRefundedTransaction).not.toHaveBeenCalled();
+    });
+
+    it('does not flag a non-refund transaction', async () => {
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn(),
+            isRefundPartOfUpgradePair: jest.fn()
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Upgrade'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(true);
+        expect(result?.notes).toEqual([]);
+        expect(previousTransactionService.isRefundPartOfUpgradePair).not.toHaveBeenCalled();
+        expect(previousTransactionService.findRefundedTransaction).not.toHaveBeenCalled();
+    });
+
+    it('does not flag a refund when the original purchase cannot be found', async () => {
+        const previousTransactionService = {
+            findRefundedTransaction: jest.fn().mockResolvedValue(undefined),
+            isRefundPartOfUpgradePair: jest.fn().mockResolvedValue(false)
+        } as any;
+
+        const service = makeService(previousTransactionService);
+        const result = await service.applyPostValidationRules({
+            transaction: makeTransaction('2026-05-10', 'Refund'),
+            validationResult: makeValidationResult()
+        });
+
+        expect(result?.valid).toBe(true);
+        expect(result?.notes).toEqual([]);
+    });
+});
