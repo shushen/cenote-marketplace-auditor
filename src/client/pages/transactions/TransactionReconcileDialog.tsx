@@ -211,8 +211,6 @@ export const TransactionReconcileDialog: React.FC<TransactionReconcileDialogProp
 
                         <TransactionPricingDetail pricing={pricing} />
 
-                        <TransactionMonthlyApportionment apportionment={apportionment} />
-
                         {existingNotes.length > 0 && (
                             <NotesSectionBox>
                                 <NotesHeadingBox>
@@ -234,6 +232,8 @@ export const TransactionReconcileDialog: React.FC<TransactionReconcileDialogProp
                                 </NotesList>
                             </NotesSectionBox>
                         )}
+
+                        <TransactionMonthlyApportionment apportionment={apportionment} />
 
                         {/* <TextField
                             fullWidth
