@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import StreamArray from 'stream-json/streamers/StreamArray.js';
+import StreamArray from 'stream-json/streamers/stream-array.js';
 import { Quote } from '#common/entities/Quote.js';
 import { QuoteVersion } from '#common/entities/QuoteVersion.js';
 import { deepEqual, normalizeObject, computeJsonPaths } from '#common/util/objectUtils.js';
@@ -204,8 +204,8 @@ export class QuoteJob {
 
         await onProgress?.(0);
 
-        const parserStream = StreamArray.withParser();
-        responseStream.pipe(parserStream as NodeJS.WritableStream);
+        const parserStream = StreamArray.withParserAsStream();
+        responseStream.pipe(parserStream);
 
         for await (const data of parserStream as AsyncIterable<{ value: QuoteData }>) {
             const row = data.value;

@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import StreamArray from 'stream-json/streamers/StreamArray.js';
+import StreamArray from 'stream-json/streamers/stream-array.js';
 import { Transaction } from '#common/entities/Transaction.js';
 import { TransactionVersion } from '#common/entities/TransactionVersion.js';
 import { deepEqual, normalizeObject, computeJsonPaths } from '#common/util/objectUtils.js';
@@ -173,8 +173,8 @@ export class TransactionJob {
 
         await onProgress?.(0);
 
-        const parserStream = StreamArray.withParser();
-        responseStream.pipe(parserStream as NodeJS.WritableStream);
+        const parserStream = StreamArray.withParserAsStream();
+        responseStream.pipe(parserStream);
 
         for await (const data of parserStream as AsyncIterable<{ value: TransactionData }>) {
             const result = await this.processOneTransaction(data.value);
