@@ -9,6 +9,7 @@ import {
     TableCell,
     TableRow,
     Typography,
+    Button,
 } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
@@ -26,6 +27,7 @@ import { CloseButton } from '../../components/CloseButton';
 import { collectIdsForDiffObject } from '#client/util/collectIds.js';
 import { isoStringWithDateAndTime } from '#common/util/dateUtils.js';
 import { formatQuoteDetailsData, formatQuoteVersionDiffLabel } from './quoteUtils';
+import { handleExportQuote } from './util';
 import { normalizeQuoteAggregateData, normalizeQuoteDetailsData } from '#common/util/quoteAggregateUtils.js';
 
 interface QuoteVersionDialogProps {
@@ -62,10 +64,36 @@ export const QuoteVersionDialog: React.FC<QuoteVersionDialogProps> = ({
             fullWidth
         >
             <DialogTitle sx={{ pr: { xs: 11, sm: 8 }, position: 'relative' }}>
-                <Box component="span">
-                    Quote Version Details
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Box component="span" sx={{ flex: '1 1 auto', minWidth: 0 }}>
+                        Quote Version Details
+                    </Box>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleExportQuote({
+                            data: version.data,
+                            quoteNumber: version.marketplaceQuoteNumber,
+                            suffix: `v${version.version}`
+                        })}
+                        sx={{ textTransform: 'none', flexShrink: 0 }}
+                    >
+                        Export Quote as JSON
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleExportQuote({
+                            data: version.details,
+                            quoteNumber: version.marketplaceQuoteNumber,
+                            suffix: `details-v${version.version}`
+                        })}
+                        sx={{ textTransform: 'none', flexShrink: 0 }}
+                    >
+                        Export Details as JSON
+                    </Button>
+                    <CloseButton onClose={onClose} />
                 </Box>
-                <CloseButton onClose={onClose} />
             </DialogTitle>
             <DialogContent dividers>
                 <InfoTableBox>
