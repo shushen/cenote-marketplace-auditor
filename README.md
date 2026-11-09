@@ -155,7 +155,7 @@ feature for licenses.
 ## Configuring the Slack Integration
 
 The optional Slack integration causes messages to be posted to specified Slack channels
-when new sales, evaluations, or data exceptions occur. Each type of message can be
+when new sales, evaluations, new installs of free apps, or data exceptions occur. Each type of message can be
 enabled or disabled independently. Data exceptions are not yet implemented.
 
 One single Slack message is posted per batch of new transactions or licenses, with a list
@@ -193,7 +193,7 @@ incoming-webhook
 - Enter the channel names where you would like to post notifications of new sales, new evaluations, or exceptions.
 - Leaving a channel name blank means that those types of events will not be posted to Slack.
 - Optionally, tick "Skip $0 sales" to leave sales with a vendor amount of exactly $0.00 (for example free renewals from test accounts) out of the sales channel.
-- Optionally, set the "Evaluation Site URL Filter (regex)" to restrict which new evaluations are posted. Only evaluations whose
+- Optionally, set the "Site Hostname Filter (regex)" to restrict which new evaluations and free installs are posted. Only those whose
   cloud site hostname (for example `acme.atlassian.net`, without `https://`) matches the (case-insensitive) regular expression
   are posted; leave blank to post all. For example, `^(?!.*(bugbounty|bugcrowd))` skips bug bounty and Bugcrowd sites.
   Evaluations with no site hostname (such as Server or Data Center) are matched as empty text, so a positive pattern such as

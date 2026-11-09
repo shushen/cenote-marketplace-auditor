@@ -39,7 +39,13 @@ export interface SlackTransactionData {
     vendorAmount: number;
 }
 
+/** License types that are announced in the evaluations channel */
+export type SlackLicenseKind = 'EVALUATION' | 'FREE';
+const SLACK_LICENSE_KINDS: readonly string[] = ['EVALUATION', 'FREE'] satisfies readonly SlackLicenseKind[];
+
 export interface SlackLicenseData {
+    licenseKind: SlackLicenseKind;
+    tier: string|undefined;
     lastUpdated: string;
     entitlementId: string;
     addonName: string;
@@ -175,20 +181,23 @@ export class SlackService {
         const { hosting } = license.data;
         const { company } = license.data.contactDetails;
         const { maintenanceStartDate, maintenanceEndDate } = license.data;
-        const { evaluationOpportunitySize, cloudSiteHostname } = license.data;
+        const { evaluationOpportunitySize, cloudSiteHostname, tier } = license.data;
 
-        if (licenseType !== 'EVALUATION') {
+        // New evaluations and new installs of free apps are both announced
+        if (!SLACK_LICENSE_KINDS.includes(licenseType)) {
             return undefined;
         }
 
         return {
+            licenseKind: licenseType as SlackLicenseKind,
+            tier,
             lastUpdated,
             addonName,
             hosting,
             company: company ?? 'Unknown',
             cloudSiteHostname,
             maintenanceStartDate,
-            maintenanceEndDate: maintenanceEndDate ?? 'Unknown',
+            maintenanceEndDate,
             oldMaintenanceEndDate: oldLicenseData?.maintenanceEndDate,
             entitlementId: getLicenseDisplayId(license.data),
             extended,
@@ -390,16 +399,22 @@ export class SlackService {
         // Split licenses into batches
         const totalMessages = Math.ceil(licenses.length / maxLicensesPerMessage);
 
+        // e.g. "2 New Evaluations, 1 New Free Install" (counts cover all batches)
+        const evaluationCount = licenses.filter(l => l.licenseKind === 'EVALUATION').length;
+        const freeCount = licenses.length - evaluationCount;
+        const countsText = [
+            evaluationCount > 0 ? `${evaluationCount} New Evaluation${evaluationCount > 1 ? 's' : ''}` : undefined,
+            freeCount > 0 ? `${freeCount} New Free Install${freeCount > 1 ? 's' : ''}` : undefined,
+        ].filter(Boolean).join(', ');
+
         for (let messageIndex = 0; messageIndex < totalMessages; messageIndex++) {
             const startIndex = messageIndex * maxLicensesPerMessage;
             const endIndex = Math.min(startIndex + maxLicensesPerMessage, licenses.length);
             const batch = licenses.slice(startIndex, endIndex);
 
-            let headerText: string;
+            let headerText = `🔍 ${countsText}`;
             if (totalMessages > 1) {
-                headerText = `🔍 ${licenses.length} New Evaluation${licenses.length > 1 ? 's' : ''} (Part ${messageIndex + 1} of ${totalMessages})`;
-            } else {
-                headerText = `🔍 ${licenses.length} New Evaluation${licenses.length > 1 ? 's' : ''}`;
+                headerText += ` (Part ${messageIndex + 1} of ${totalMessages})`;
             }
 
             const message = encodeSlackText(headerText);
@@ -420,7 +435,6 @@ export class SlackService {
 
             // Add a block for each license in this batch
             for (const l of batch) {
-                const maintenanceDays = l.maintenanceEndDate ? dateDiff(l.maintenanceStartDate, l.maintenanceEndDate) : 'Unknown';
                 let extensionText = '';
                 let opportunityText = '';
                 const entitlementUrl = `${baseUrl}/licenses?search=${encodeURIComponent(l.entitlementId)}`;
@@ -438,7 +452,16 @@ export class SlackService {
                     opportunityText = `\nOpportunity Size:\n*${l.evaluationOpportunitySize}*`;
                 }
 
-                const maintenanceDaysText = `${maintenanceDays} days`;
+                // Evaluations have a fixed period; free installs have no end date, so show their tier instead
+                let periodFieldText: string;
+                if (l.licenseKind === 'FREE') {
+                    periodFieldText = `License:\n*Free* (no expiry, started ${l.maintenanceStartDate})\nTier:\n*${l.tier ?? 'Unknown'}*`;
+                } else if (l.maintenanceEndDate) {
+                    const maintenanceDays = dateDiff(l.maintenanceStartDate, l.maintenanceEndDate);
+                    periodFieldText = `Evaluation Period:\n*${maintenanceDays} days* (${l.maintenanceStartDate} to ${l.maintenanceEndDate})${opportunityText}${extensionText}`;
+                } else {
+                    periodFieldText = `Evaluation Period:\n*Unknown* (started ${l.maintenanceStartDate})${opportunityText}${extensionText}`;
+                }
 
                 blocks.push(
                     {
@@ -461,7 +484,7 @@ export class SlackService {
                             },
                             {
                                 type: 'mrkdwn',
-                                text: encodeSlackText(`Evaluation Period:\n*${maintenanceDaysText}* (${l.maintenanceStartDate} to ${l.maintenanceEndDate})${opportunityText}${extensionText}`)
+                                text: encodeSlackText(periodFieldText)
                             },
                             {
                                 type: 'mrkdwn',

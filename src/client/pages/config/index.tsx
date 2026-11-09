@@ -370,7 +370,7 @@ export const ConfigPage: React.FC = () => {
                                         />
                                     </Box>
                                     <TextField
-                                        label="Channel for New Evaluations"
+                                        label="Channel for New Evaluations and Free Installs"
                                         value={configValues[ConfigKey.SlackChannelEvaluations]}
                                         onChange={handleChange(ConfigKey.SlackChannelEvaluations)}
                                         fullWidth
@@ -378,11 +378,11 @@ export const ConfigPage: React.FC = () => {
                                         InputProps={{
                                             startAdornment: <span>#</span>,
                                         }}
-                                        helperText="Channel to post new evaluation notifications. Leave blank to disable."
+                                        helperText="Channel to post new evaluation and new free app install notifications. Leave blank to disable."
                                     />
                                     <Box sx={{ ml: 3, pl: 2, borderLeft: 2, borderColor: 'divider' }}>
                                         <TextField
-                                            label="Evaluation Site URL Filter (regex)"
+                                            label="Site Hostname Filter (regex)"
                                             placeholder="^(?!.*(bugbounty|bugcrowd))"
                                             slotProps={{ inputLabel: { shrink: true } }}
                                             value={configValues[ConfigKey.SlackEvaluationsSiteFilter]}
@@ -392,7 +392,7 @@ export const ConfigPage: React.FC = () => {
                                             error={!siteFilterValid}
                                             helperText={
                                                 siteFilterValid
-                                                    ? 'Only evaluations whose site hostname (e.g. acme.atlassian.net, without https://) matches this case-insensitive regex are posted. Leave blank to post all. Evaluations with no hostname are matched as empty text. Example to skip bug bounty/bugcrowd sites: ^(?!.*(bugbounty|bugcrowd))'
+                                                    ? 'Only evaluations and free installs whose site hostname (e.g. acme.atlassian.net, without https://) matches this case-insensitive regex are posted. Leave blank to post all. Licenses with no hostname are matched as empty text. Example to skip bug bounty/bugcrowd sites: ^(?!.*(bugbounty|bugcrowd))'
                                                     : 'Invalid regular expression. Until fixed, all evaluations will be posted.'
                                             }
                                         />

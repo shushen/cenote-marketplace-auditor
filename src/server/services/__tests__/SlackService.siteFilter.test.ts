@@ -4,6 +4,8 @@ import { SlackChannelType } from '#common/types/slackChannel.js';
 
 function evaluation(entitlementId: string, cloudSiteHostname: string | undefined): SlackLicenseData {
     return {
+        licenseKind: 'EVALUATION',
+        tier: undefined,
         lastUpdated: '2026-11-09',
         entitlementId,
         addonName: 'Test App',
