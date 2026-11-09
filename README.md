@@ -198,6 +198,10 @@ incoming-webhook
   are posted; leave blank to post all. For example, `^(?!.*(bugbounty|bugcrowd))` skips bug bounty and Bugcrowd sites.
   Evaluations with no site hostname (such as Server or Data Center) are matched as empty text, so a positive pattern such as
   `^acme` will not post them. If the regex is invalid, all evaluations are posted.
+- Optionally, tick "Link entitlement IDs to the Atlassian Marketplace" (the last Slack setting) to make the entitlement IDs in
+  Slack messages open the license in your Marketplace vendor reports
+  (`https://marketplace.atlassian.com/manage/vendors/<vendor id>/report/licenses/details/<entitlement id>`) instead of this
+  app's own page. This uses the Vendor ID from the configuration.
 - The exceptions channel is not currently implemented.
 
 ## Command Line Tools

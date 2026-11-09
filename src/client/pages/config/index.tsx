@@ -44,6 +44,7 @@ export const ConfigPage: React.FC = () => {
         [ConfigKey.SlackEvaluationsSiteFilter]: '',
         [ConfigKey.SlackChannelExceptions]: '',
         [ConfigKey.SlackChannelQuotes]: '',
+        [ConfigKey.SlackLinkToMarketplace]: false,
         [ConfigKey.DemoMode]: false,
     });
     const [loading, setLoading] = useState(true);
@@ -194,6 +195,7 @@ export const ConfigPage: React.FC = () => {
                 [ConfigKey.SlackEvaluationsSiteFilter]: '',
                 [ConfigKey.SlackChannelExceptions]: '',
                 [ConfigKey.SlackChannelQuotes]: '',
+                [ConfigKey.SlackLinkToMarketplace]: false,
             }));
         }
     };
@@ -419,6 +421,23 @@ export const ConfigPage: React.FC = () => {
                                         }}
                                         helperText="Channel to post new quote notifications. Leave blank to disable."
                                     />
+                                    <Box sx={{ mt: 1 }}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={Boolean(configValues[ConfigKey.SlackLinkToMarketplace])}
+                                                    onChange={(event) => setConfigValues((prev) => ({
+                                                        ...prev,
+                                                        [ConfigKey.SlackLinkToMarketplace]: event.target.checked,
+                                                    }))}
+                                                />
+                                            }
+                                            label="Link entitlement IDs to the Atlassian Marketplace"
+                                        />
+                                        <FormHelperText sx={{ ml: 4, mt: -0.5 }}>
+                                            Entitlement links in Slack open the license in your Marketplace vendor reports (uses the Vendor ID above) instead of this app. Leave unticked to link to this app.
+                                        </FormHelperText>
+                                    </Box>
                                 </>
                             )}
                         </SlackContainer>

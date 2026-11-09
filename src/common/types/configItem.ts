@@ -16,6 +16,7 @@ export interface ConfigKeyType {
     [ConfigKey.SlackEvaluationsSiteFilter]: string;
     [ConfigKey.SlackChannelExceptions]: string;
     [ConfigKey.SlackChannelQuotes]: string;
+    [ConfigKey.SlackLinkToMarketplace]: boolean;
     [ConfigKey.DemoMode]: boolean;
 }
 
@@ -34,6 +35,7 @@ export enum ConfigKey {
     SlackEvaluationsSiteFilter = 'SlackEvaluationsSiteFilter',
     SlackChannelExceptions = 'SlackChannelExceptions',
     SlackChannelQuotes = 'SlackChannelQuotes',
+    SlackLinkToMarketplace = 'SlackLinkToMarketplace',
     DemoMode = 'DemoMode'
 }
 

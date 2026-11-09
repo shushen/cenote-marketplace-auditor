@@ -18,6 +18,7 @@ export function getConfigKeyType(key: ConfigKey): ConfigValueType {
         case ConfigKey.SchedulerFrequency:
             return 'number';
         case ConfigKey.DemoMode:
+        case ConfigKey.SlackLinkToMarketplace:
         case ConfigKey.SlackSkipZeroSales:
             return 'boolean';
         default:

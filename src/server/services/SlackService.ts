@@ -106,6 +106,24 @@ export class SlackService {
         return baseUrl.replace(/\/+$/, '');
     }
 
+    /**
+     * Returns a function that builds the link for an entitlement ID in Slack messages. By default it
+     * links to this app's own page (appPath); if the "link to Marketplace" option is on, it links to the
+     * license in the Marketplace vendor reports instead (the vendor ID is a mandatory setting).
+     */
+    private async getEntitlementLinker(appPath: '/transactions' | '/licenses'): Promise<(entitlementId: string) => string> {
+        const linkToMarketplace = await this.configDao.get<boolean>(ConfigKey.SlackLinkToMarketplace);
+
+        if (linkToMarketplace) {
+            const vendorId = ((await this.configDao.get<string>(ConfigKey.AtlassianVendorId)) ?? '').trim();
+            return (entitlementId) =>
+                `https://marketplace.atlassian.com/manage/vendors/${encodeURIComponent(vendorId)}/report/licenses/details/${encodeURIComponent(entitlementId)}`;
+        }
+
+        const baseUrl = await this.getBaseUrl();
+        return (entitlementId) => `${baseUrl}${appPath}?search=${encodeURIComponent(entitlementId)}`;
+    }
+
     private async getChannelId(channelName: string): Promise<string | null> {
         const client = await this.getClient();
         if (!client) {
@@ -255,7 +273,7 @@ export class SlackService {
         }
 
         const totalVendorAmount = transactions.reduce((acc, t) => acc + t.vendorAmount, 0);
-        const baseUrl = await this.getBaseUrl();
+        const entitlementLink = await this.getEntitlementLinker('/transactions');
 
         // Slack has a limit of 50 blocks per message
         // Header + divider = 2 blocks
@@ -302,7 +320,7 @@ export class SlackService {
             // Add a block for each transaction in this batch
             for (const t of batch) {
                 const maintenanceDays = dateDiff(t.maintenanceStartDate, t.maintenanceEndDate);
-                const entitlementUrl = `${baseUrl}/transactions?search=${encodeURIComponent(t.entitlementId)}`;
+                const entitlementUrl = entitlementLink(t.entitlementId);
                 const entitlementIdText = encodeSlackText(t.entitlementId);
 
                 blocks.push(
@@ -384,7 +402,7 @@ export class SlackService {
             return;
         }
 
-        const baseUrl = await this.getBaseUrl();
+        const entitlementLink = await this.getEntitlementLinker('/licenses');
 
         // Slack has a limit of 50 blocks per message
         // Header + divider = 2 blocks
@@ -437,7 +455,7 @@ export class SlackService {
             for (const l of batch) {
                 let extensionText = '';
                 let opportunityText = '';
-                const entitlementUrl = `${baseUrl}/licenses?search=${encodeURIComponent(l.entitlementId)}`;
+                const entitlementUrl = entitlementLink(l.entitlementId);
                 const entitlementIdText = encodeSlackText(l.entitlementId);
 
                 if (l.extended && l.oldMaintenanceEndDate && l.maintenanceEndDate) {
@@ -626,8 +644,7 @@ export class SlackService {
 
         const vendorDifference = vendorAmount - expectedVendorAmount;
         const sanitizedCompany = company ?? 'Unknown';
-        const baseUrl = await this.getBaseUrl();
-        const entitlementUrl = `${baseUrl}/transactions?search=${encodeURIComponent(transaction.entitlementId)}`;
+        const entitlementUrl = (await this.getEntitlementLinker('/transactions'))(transaction.entitlementId);
         const entitlementIdText = encodeSlackText(getTransactionDisplayId(transaction.data));
 
         const message = encodeSlackText(`⚠️ Transaction Exception - ${addonName}  - ${sanitizedCompany} (Difference: ${formatCurrency(vendorDifference)})`);
